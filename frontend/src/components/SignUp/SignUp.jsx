@@ -37,10 +37,8 @@ function SignUp() {
     return errs;
   }
 
-  function showBanner(message, type = 'error', duration = 3300) {
-    if (bannerTimeout.current) {
-      clearTimeout(bannerTimeout.current);
-    }
+  function showBanner(message, type = 'error', duration = 3200) {
+    if (bannerTimeout.current) clearTimeout(bannerTimeout.current);
     setBanner({ message, type, visible: true });
     if (duration > 0) {
       bannerTimeout.current = setTimeout(() => {
@@ -73,11 +71,11 @@ function SignUp() {
     if (Object.keys(foundErrors).length > 0) {
       setErrors(foundErrors);
       if (foundErrors.username) {
-        showBanner(foundErrors.username, 'error', 3500);
+        showBanner(foundErrors.username, 'error', 3200);
       } else if (foundErrors.password) {
-        showBanner(foundErrors.password, 'error', 3500);
+        showBanner(foundErrors.password, 'error', 3200);
       } else if (foundErrors.confirmPassword) {
-        showBanner(foundErrors.confirmPassword, 'error', 3500);
+        showBanner(foundErrors.confirmPassword, 'error', 3200);
       }
       return;
     }
@@ -92,16 +90,16 @@ function SignUp() {
       });
       const data = await response.json();
       if (!response.ok) {
-        showBanner(typeof data.detail === 'string' ? data.detail : 'Signup failed.', 'error', 4000);
+        showBanner(typeof data.detail === 'string' ? data.detail : 'Signup failed.', 'error', 3600);
         setLoading(false);
         return;
       }
       setErrors({});
-      showBanner('Signup successful: User details added to users.json', 'success', 2200);
+      showBanner('Signup successful: User details added to users.json', 'success', 1600);
       setLoading(false);
-      setTimeout(() => { navigate('/login'); }, 1200);
+      setTimeout(() => { navigate('/login'); }, 1100);
     } catch (err) {
-      showBanner('Could not connect to server. Please try again.', 'error', 4000);
+      showBanner('Could not connect to server. Please try again.', 'error', 3600);
       setLoading(false);
     }
   };
@@ -144,7 +142,7 @@ function SignUp() {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    zIndex: 2
   };
 
   const bannerBaseStyle = {
@@ -184,7 +182,7 @@ function SignUp() {
   const formStyle = {
     width: '100%',
     maxWidth: 350,
-    marginTop: '13vh',
+    marginTop: '2.6rem',
     marginBottom: 0,
     padding: 0,
     display: 'flex',
