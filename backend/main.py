@@ -8,12 +8,12 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-# Path config for users.json (persistent user database OUTSIDE backend/ tree)
+# Path config for users.json (now using JournalApp/database/users.json per requirements)
 BASE_PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-USERS_DB_DIR = os.path.join(BASE_PROJECT_DIR, "journalapp_data")
+USERS_DB_DIR = os.path.join(BASE_PROJECT_DIR, "JournalApp", "database")
 USERS_DB_FILE = os.path.join(USERS_DB_DIR, "users.json")
 
-# Ensure data dir exists
+# Ensure database dir exists
 os.makedirs(USERS_DB_DIR, exist_ok=True)
 
 # ---- Data utility functions ----
@@ -54,8 +54,8 @@ def signup():
 
     - Username must be unique (case-insensitive).
     - Passwords must match.
-    - On success: Saves user to users.json (with hashed password).
-    - Returns: { "message": "Signup successful." }
+    - On success: Saves user to JournalApp/database/users.json (with hashed password).
+    - Returns: { "message": "Signup successful: User details added to users.json" }
 
     Error cases: { "detail": "..." }, status 400/409
     """
@@ -91,7 +91,7 @@ def signup():
     except Exception:
         return jsonify(detail="Could not write user file."), 500
 
-    return jsonify(message="Signup successful."), 200
+    return jsonify(message="Signup successful: User details added to users.json"), 200
 
 # PUBLIC_INTERFACE
 @app.route("/login", methods=["POST"])
@@ -101,7 +101,7 @@ def login():
 
     POST JSON: { "username": str, "password": str }
 
-    - Looks up user by username (case-insensitive).
+    - Looks up user by username (case-insensitive) in JournalApp/database/users.json.
     - Hashes provided password and compares to stored hash.
     - On success: { "message": "Login Successful" }
     - On failure: { "detail": "Invalid username or password." }, status 401
