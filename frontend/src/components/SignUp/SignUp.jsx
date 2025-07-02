@@ -119,7 +119,7 @@ function SignUp() {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    fontFamily: 'var(--font-family)'
+    fontFamily: 'Helvetica Neue, Arial, sans-serif'
   };
 
   const bottomCurveStyle = {
@@ -127,10 +127,10 @@ function SignUp() {
     left: 0,
     bottom: 0,
     width: '100vw',
-    height: '26vh',
+    height: '29vh',
     background: 'var(--bg-curve)',
-    borderTopLeftRadius: '70vw 12vh',
-    borderTopRightRadius: '70vw 12vh',
+    borderTopLeftRadius: '80vw 15vh',
+    borderTopRightRadius: '80vw 15vh',
     zIndex: 0,
     boxShadow: '0 -2px 20px 0 rgba(20,200,183,0.04)',
     pointerEvents: 'none'
@@ -144,7 +144,7 @@ function SignUp() {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2
+    zIndex: 2,
   };
 
   const bannerBaseStyle = {
@@ -154,7 +154,7 @@ function SignUp() {
     boxSizing: 'border-box',
     textAlign: 'center',
     fontSize: '1.03rem',
-    fontFamily: 'var(--font-family)',
+    fontFamily: 'inherit',
     fontWeight: 600,
     letterSpacing: '0.01em',
     borderRadius: 6,
@@ -201,7 +201,7 @@ function SignUp() {
     textAlign: 'center',
     marginTop: 0,
     marginBottom: '2rem',
-    fontFamily: 'var(--font-family)',
+    fontFamily: 'inherit',
     letterSpacing: '0.01em'
   };
 
@@ -213,9 +213,9 @@ function SignUp() {
     border: 'none',
     borderRadius: 6,
     background: 'var(--form-bg)',
-    padding: '0 16px',
+    paddingLeft: 16,
     fontSize: '1rem',
-    fontFamily: 'var(--font-family)',
+    fontFamily: 'inherit',
     color: 'var(--text-input)',
     fontWeight: 400,
     outline: 'none',
@@ -232,7 +232,7 @@ function SignUp() {
     border: 'none',
     background: 'var(--button-bg)',
     color: 'var(--button-text)',
-    fontFamily: 'var(--font-family)',
+    fontFamily: 'inherit',
     fontSize: '1.25rem',
     fontWeight: 700,
     cursor: 'pointer',
@@ -245,9 +245,9 @@ function SignUp() {
   const footerStyle = {
     marginTop: '1.3rem',
     textAlign: 'center',
-    fontSize: '0.96rem',
+    fontSize: '0.95rem',
     color: 'var(--text-footer)',
-    fontFamily: 'var(--font-family)',
+    fontFamily: 'inherit',
     fontWeight: 400,
     zIndex: 2,
     userSelect: 'none'
@@ -270,7 +270,6 @@ function SignUp() {
     width: '100%'
   };
 
-  let loginLinkHover = null;
   function onLoginMouseOver(e) {
     e.currentTarget.style.color = '#055b5c';
     e.currentTarget.style.textDecorationColor = '#1ac9c6';
@@ -279,7 +278,6 @@ function SignUp() {
     e.currentTarget.style.color = 'var(--link)';
     e.currentTarget.style.textDecorationColor = 'transparent';
   }
-  let buttonHover = null;
   function onButtonMouseOver(e) {
     e.currentTarget.style.background = '#066c75';
   }
