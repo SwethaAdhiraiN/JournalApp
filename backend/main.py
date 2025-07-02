@@ -6,10 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 # Path for users.json data file
-USERS_DB_DIR = os.path.join(os.path.dirname(__file__), "..", "database")
+# Move users.json OUTSIDE of backend watched folders (to avoid uvicorn reload loop on file writes)
+BASE_PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+USERS_DB_DIR = os.path.join(BASE_PROJECT_DIR, "journalapp_data")
 USERS_DB_FILE = os.path.join(USERS_DB_DIR, "users.json")
 
-# Make sure the database directory exists
+# Make sure the external database directory exists
 os.makedirs(USERS_DB_DIR, exist_ok=True)
 
 app = FastAPI(

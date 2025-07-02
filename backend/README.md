@@ -14,10 +14,17 @@ From the `JournalApp/backend` directory:
 
 ```bash
 pip install -r requirements.txt
-uvicorn main:app --reload
+# IMPORTANT: Only reload on backend code, not on database file writes!
+# Use this for seamless dev, or you may get *infinite reload loops* if users.json updates:
+uvicorn main:app --reload --reload-dir backend
 ```
 
 OpenAPI docs will be available at `http://localhost:8000/docs` when running.
+
+# Note on Hot Reload and Data
+- The backend will save user info to a data file OUTSIDE the backend source tree (see main.py).
+- If you must keep user data inside the source folder, reload will loop on every signup/login.
+- Always use `--reload-dir backend` with uvicorn for development!
 
 ### Signup Request
 
