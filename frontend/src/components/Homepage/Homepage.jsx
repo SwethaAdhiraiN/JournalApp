@@ -12,6 +12,11 @@ function Homepage() {
     navigate('/signup');
   };
 
+  const handleLogin = () => {
+    // PUBLIC_INTERFACE: Navigate to Login page
+    navigate('/login');
+  };
+
   return (
     <div className={styles.homeRoot}>
       {/* Decorative Layered Backgrounds */}
@@ -24,7 +29,7 @@ function Homepage() {
         <h1 className={styles.heading}>Daily Journal</h1>
         <div className={styles.subheading}>Track your day and your mood</div>
         <div className={styles.buttonRow}>
-          <button className={styles.loginButton} type="button">
+          <button className={styles.loginButton} type="button" onClick={handleLogin}>
             Log In
           </button>
           <button className={styles.signupButton} type="button" onClick={handleSignup}>

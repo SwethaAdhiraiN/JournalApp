@@ -30,7 +30,7 @@ function SignUp() {
 
   const goToLogin = (e) => {
     e.preventDefault();
-    navigate('/');
+    navigate('/login');
   };
 
   return (
