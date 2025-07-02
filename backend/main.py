@@ -68,15 +68,15 @@ def save_json_dict(filepath, data):
 @app.route("/submit-mood", methods=["POST"])
 def submit_mood():
     """
-    Add or append a mood entry for a user and date.
+    Overwrite mood entry for a user and date.
 
     POST JSON: { "username": str, "date": str, "mood": str }
 
     - Stores in JournalApp/database/mood.json as:
-      { "username": { "date": [mood, ...], ... }, ... }
-      Appends new mood to any existing moods for same date/user.
+      { "username": { "date": [mood], ... }, ... }
+      Overwrites any previous mood for this date/user; only the latest submission is kept.
     - Creates file/entries if not present.
-    - Returns: { "message": "...", "moods": [str, ...], "username": ..., "date": ... }
+    - Returns: { "message": "...", "moods": [str], "username": ..., "date": ... }
     - Error cases: { "detail": "..." }, status 400/409/500
 
     Frontend CORS supported.
@@ -98,15 +98,13 @@ def submit_mood():
 
     mood_data = load_json_dict(MOOD_DB_FILE)
 
-    # Ensure user exists as a dict, and date exists as a list
+    # Ensure user exists as a dict, and date overwrite previous entry
     if username not in mood_data:
         mood_data[username] = {}
     user_moods = mood_data[username]
 
-    if date not in user_moods:
-        user_moods[date] = []
-    # Append if not already present for the same date. Allow multiple moods per day.
-    user_moods[date].append(mood)
+    # Overwrite the entry for this user/date: always store as one-item list
+    user_moods[date] = [mood]
 
     try:
         save_json_dict(MOOD_DB_FILE, mood_data)
@@ -124,15 +122,15 @@ def submit_mood():
 @app.route("/submit-journal", methods=["POST"])
 def submit_journal():
     """
-    Add or append a journal entry for a user and date.
+    Overwrite journal entry for a user and date.
 
     POST JSON: { "username": str, "date": str, "journal": str }
 
     - Stores in JournalApp/database/journal.json as:
-      { "username": { "date": [journal, ...], ... }, ... }
-      Appends the new journal entry for the given date/user.
+      { "username": { "date": [journal], ... }, ... }
+      Overwrites any previous journal for this user/date; only the latest submission is kept.
     - Creates file/entries if not present.
-    - Returns: { "message": "...", "journals": [str, ...], "username": ..., "date": ... }
+    - Returns: { "message": "...", "journals": [str], "username": ..., "date": ... }
     - Error cases: { "detail": "..." }, status 400/409/500
 
     Frontend CORS supported.
@@ -158,10 +156,8 @@ def submit_journal():
         journal_data[username] = {}
     user_entries = journal_data[username]
 
-    if date not in user_entries:
-        user_entries[date] = []
-    # Always append, no dedupe
-    user_entries[date].append(journal)
+    # Overwrite the journal for this user/date: always store as one-item list
+    user_entries[date] = [journal]
 
     try:
         save_json_dict(JOURNAL_DB_FILE, journal_data)
