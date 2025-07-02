@@ -81,7 +81,18 @@ function SignUp() {
     }
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/signup', {
+      // Use centralized API base URL from config.js
+      // Use relative path if proxy is set in package.json, else fall back to configured full URL
+      let signupUrl = '';
+      try {
+        // Dynamic import for Vite/CRA support
+        // eslint-disable-next-line
+        signupUrl = require('../../config').API_BASE_URL + '/signup';
+      } catch(e) {
+        // fallback for custom builds
+        signupUrl = 'http://localhost:8000/signup';
+      }
+      const response = await fetch(`${signupUrl}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
