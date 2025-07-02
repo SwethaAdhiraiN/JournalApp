@@ -301,6 +301,7 @@
   background: #fffafb;
   border-radius: 1.5rem;
   box-shadow: 0 13px 54px 0 rgba(237,105,170,.17), 0 2.5px 13px 0 rgba(191,58,142,0.05);
+  /* Sets base padding but allows tighter padding on small screens */
   padding: 34px 23px 24px 23px;
   min-width: 325px;
   max-width: 96vw;
@@ -311,6 +312,8 @@
   position: relative;
   z-index: 1201;
   border: 1.3px solid #FFD6EA;
+  transition: width 0.2s, padding 0.2s;
+  /* Responsive via media below */
 }
 
 .modalTitle {
@@ -320,14 +323,17 @@
   margin-bottom: 20px;
   color: #ED69AA;
   letter-spacing: 0.04em;
+  text-align: center;
+  width: 100%;
 }
 
+/* Make emoji grid use CSS grid for even row-wrapping and responsiveness */
 .emojiGrid {
   width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px 14px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+  gap: 13px 10px;
+  justify-items: center;
   align-items: center;
   margin-bottom: 17px;
 }
@@ -343,6 +349,11 @@
   box-shadow: 0 3px 13px 0 rgba(240, 85, 166, 0.11);
   outline: none;
   color: #B12767;
+  min-width: 54px;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .emojiButton:hover,
 .emojiButton:focus {
@@ -374,6 +385,8 @@
   outline: none;
   box-shadow: 0 1.5px 10px 0 rgba(237,105,170,0.05);
   transition: border 0.14s, box-shadow 0.14s;
+  font-family: inherit;
+  /* Responsive tweak for mobile - see media below */
 }
 .journalInput:focus {
   border: 1.5px solid #ED69AA;
@@ -385,6 +398,7 @@
   width: 100%;
   justify-content: flex-end;
   gap: 11px;
+  flex-wrap: wrap; /* Allow buttons to stack if screen is very narrow */
 }
 .saveButton,
 .cancelButton {
@@ -400,6 +414,69 @@
   letter-spacing: 0.01em;
   margin-top: 0;
 }
+
+/* Responsive adjustments for modal, emoji grid, and journal input */
+@media (max-width: 850px) {
+  .modal {
+    min-width: 0;
+    width: 97vw;
+    max-width: 99vw;
+    padding: 20px 1vw 12px 1vw;
+    border-radius: 1rem;
+  }
+  .emojiGrid {
+    grid-template-columns: repeat(auto-fit, minmax(38px, 1fr));
+    gap: 10px 7px;
+    margin-bottom: 12px;
+  }
+  .emojiButton {
+    font-size: 1.35rem;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 4px 7px;
+    border-radius: 18px;
+  }
+  .journalInput {
+    font-size: 1rem;
+    min-height: 38px;
+    padding: 8px 10px;
+  }
+  .modalActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .saveButton,
+  .cancelButton {
+    width: 100%;
+    padding: 9px 0;
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+}
+
+/* Super small screens and tall modal */
+@media (max-width: 500px) {
+  .modal {
+    min-width: 0;
+    width: 99vw;
+    padding: 10px 0.7em 7px 0.7em;
+    border-radius: 0.7rem;
+  }
+  .modalTitle {
+    font-size: 1.08rem;
+    margin-bottom: 12px;
+  }
+  .emojiGrid {
+    gap: 7px 4px;
+    margin-bottom: 8px;
+  }
+  .journalInput {
+    font-size: 0.95rem;
+    min-height: 32px;
+    padding: 5px 8px;
+  }
+}
+
 
 .saveButton {
   background: #ED69AA;
