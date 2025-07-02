@@ -65,6 +65,33 @@ def save_json_dict(filepath, data):
 # ---- API Route Definitions ----
 
 # PUBLIC_INTERFACE
+@app.route("/get-moods", methods=["POST"])
+def get_moods():
+    """
+    Retrieve all mood entries for a given user.
+
+    POST JSON: { "username": str }
+
+    Returns all mood entries for that user as { "moods": { "date": [mood, ...], ... } }
+    or empty "moods": {} if not found.
+
+    Status 200 on success (including empty), 400/500 for errors.
+    """
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify(detail="No JSON body sent."), 400
+
+    username = (data.get("username") or "").strip()
+    if not username or len(username) < 3 or len(username) > 32:
+        return jsonify(detail="Username must be 3-32 characters."), 400
+
+    mood_data = load_json_dict(MOOD_DB_FILE)
+    if not mood_data or username not in mood_data:
+        return jsonify(moods={}), 200
+
+    return jsonify(moods=mood_data.get(username, {})), 200
+
+# PUBLIC_INTERFACE
 @app.route("/submit-mood", methods=["POST"])
 def submit_mood():
     """

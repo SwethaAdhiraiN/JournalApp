@@ -111,7 +111,22 @@ function CalendarPage() {
       const username = localStorage.getItem("journalapp-username");
       if (!username) return;
 
-      // Helper to fetch a JSON endpoint, with fallback empty object and error logging.
+      // Helper to POST to backend for moods (new endpoint)
+      async function fetchUserMoods() {
+        try {
+          const resp = await fetch(`${API_BASE_URL}/get-moods`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username }),
+          });
+          if (!resp.ok) return {};
+          const out = await resp.json();
+          return out.moods || {};
+        } catch {
+          return {};
+        }
+      }
+      // Journal fallback: old GET for MVP; replace with similar endpoint for journals if needed
       async function fetchJson(relativeUrl) {
         try {
           const resp = await fetch(
@@ -121,21 +136,16 @@ function CalendarPage() {
           if (!resp.ok) return {};
           return await resp.json();
         } catch (err) {
-          // We could notify user here if desired (not requested)
           return {};
         }
       }
 
-      // For this MVP backend, mood.json and journal.json are outside Flask static serving,
-      // so we access via a relative path (proxied if needed).
-      // (Paths are relative to backend root, see Flask backend code)
-      // We still use the read-only GET fetch as a way to support live reactivity in MVP.
-      const moodUrl = "/../database/mood.json";
+      // URLs for old raw journal fetch
       const journalUrl = "/../database/journal.json";
 
-      // Fetch user mood/journal dicts from backend files.
-      const [allMoods, allJournals] = await Promise.all([
-        fetchJson(moodUrl), fetchJson(journalUrl)
+      // Fetch user mood dict using new REST API, and journal as previously
+      const [userMoods, allJournals] = await Promise.all([
+        fetchUserMoods(), fetchJson(journalUrl)
       ]);
 
       // Track mood/journal only for visible dates in the current calendar month
@@ -159,9 +169,9 @@ function CalendarPage() {
 
       const calendarDates = getCalendarDates(year, month, calendarWeeks);
 
-      // Only keep mood/journal entries of username for valid dates
-      if (allMoods && allMoods[username]) {
-        Object.entries(allMoods[username]).forEach(([date, moodArr]) => {
+      // Only keep mood entries of username for valid dates
+      if (userMoods) {
+        Object.entries(userMoods).forEach(([date, moodArr]) => {
           if (calendarDates.includes(date) && Array.isArray(moodArr) && moodArr.length > 0) {
             const lastMoodLabel = moodArr[moodArr.length - 1];
             moodObj[date] = {
