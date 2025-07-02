@@ -103,6 +103,9 @@ function SignUp() {
         return;
       }
       setErrors({});
+      if (form.username) {
+        localStorage.setItem("journalapp-username", form.username);
+      }
       showBanner('Signup successful: User details added to users.json', 'success', 1600);
       setLoading(false);
       setTimeout(() => { navigate('/login'); }, 1100);

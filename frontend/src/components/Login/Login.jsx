@@ -85,6 +85,9 @@ function Login() {
       }
 
       // Success: backend returns { message: "Login Successful" }
+      if (form.username) {
+        localStorage.setItem("journalapp-username", form.username);
+      }
       showBanner(data.message || 'Login Successful', 'success', 2300);
       setLoading(false);
 

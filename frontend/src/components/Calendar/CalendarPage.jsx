@@ -90,9 +90,52 @@ function CalendarPage() {
     setModalOpen(false);
   }
 
-  function handleSave() {
-    setMood(tempMood);
-    setJournal(tempJournal.trim());
+  // Save mood and/or journal to backend, and update state on success
+  async function handleSave() {
+    if (!tempMood && tempJournal.trim() === "") {
+      // No changes
+      setModalOpen(false);
+      return;
+    }
+
+    const username = localStorage.getItem("journalapp-username") || "demo-user";
+    const year = today.year;
+    const month = today.month + 1; // month is 0-indexed
+    const day = today.date;
+    const dateStr = `${year}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+
+    // Helper to POST to backend
+    async function postToBackend(path, body) {
+      try {
+        const res = await fetch(`http://localhost:8000${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        return await res.json();
+      } catch {
+        return { detail: "Network/server error." };
+      }
+    }
+
+    // Persist mood if changed
+    if (tempMood && (!mood || tempMood.emoji !== mood.emoji)) {
+      await postToBackend("/submit-mood", {
+        username,
+        date: dateStr,
+        mood: tempMood.label,
+      });
+      setMood(tempMood);
+    }
+    // Persist journal if changed
+    if (tempJournal.trim() && tempJournal.trim() !== journal) {
+      await postToBackend("/submit-journal", {
+        username,
+        date: dateStr,
+        journal: tempJournal.trim(),
+      });
+      setJournal(tempJournal.trim());
+    }
     setModalOpen(false);
   }
 
