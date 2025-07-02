@@ -223,11 +223,6 @@ function SignUp() {
     boxSizing: 'border-box'
   };
 
-  const inputFocusStyle = {
-    background: '#e3fbf5',
-    boxShadow: '0 0 0 2px #29bab5'
-  };
-
   const buttonStyle = {
     width: '100%',
     height: 44,
@@ -245,10 +240,6 @@ function SignUp() {
     boxShadow: '0px 2px 9px 0 rgba(20,76,76,0.07)',
     letterSpacing: '0.01em',
     outline: 'none'
-  };
-
-  const buttonHoverStyle = {
-    background: '#066c75'
   };
 
   const footerStyle = {
@@ -271,11 +262,6 @@ function SignUp() {
     transition: 'text-decoration-color 0.14s, color 0.14s'
   };
 
-  const loginLinkHoverStyle = {
-    color: '#055b5c',
-    textDecorationColor: '#1ac9c6'
-  };
-
   const errorStyle = {
     color: '#c03528',
     fontSize: '0.93em',
@@ -283,6 +269,23 @@ function SignUp() {
     textAlign: 'left',
     width: '100%'
   };
+
+  let loginLinkHover = null;
+  function onLoginMouseOver(e) {
+    e.currentTarget.style.color = '#055b5c';
+    e.currentTarget.style.textDecorationColor = '#1ac9c6';
+  }
+  function onLoginMouseOut(e) {
+    e.currentTarget.style.color = 'var(--link)';
+    e.currentTarget.style.textDecorationColor = 'transparent';
+  }
+  let buttonHover = null;
+  function onButtonMouseOver(e) {
+    e.currentTarget.style.background = '#066c75';
+  }
+  function onButtonMouseOut(e) {
+    e.currentTarget.style.background = 'var(--button-bg)';
+  }
 
   return (
     <div style={rootStyle}>
@@ -361,8 +364,8 @@ function SignUp() {
             style={buttonStyle}
             type="submit"
             disabled={loading}
-            onMouseOver={e => { e.currentTarget.style.background = '#066c75'; }}
-            onMouseOut={e => { e.currentTarget.style.background = 'var(--button-bg)'; }}
+            onMouseOver={onButtonMouseOver}
+            onMouseOut={onButtonMouseOut}
           >
             {loading ? 'Signing Up...' : 'Sign Up'}
           </button>
@@ -373,14 +376,8 @@ function SignUp() {
             style={loginLinkStyle}
             href="/login"
             onClick={goToLogin}
-            onMouseOver={e => {
-              e.currentTarget.style.color = '#055b5c';
-              e.currentTarget.style.textDecorationColor = '#1ac9c6';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.color = 'var(--link)';
-              e.currentTarget.style.textDecorationColor = 'transparent';
-            }}
+            onMouseOver={onLoginMouseOver}
+            onMouseOut={onLoginMouseOut}
             tabIndex={0}
           >
             Log In
