@@ -20,7 +20,8 @@
   --font-family: 'Helvetica Neue', Arial, sans-serif;
   --mood-label: #B12767;
   --journal-label: #906cb5;
-}
+
+  /* Teal/Mint theme overrides (used for finalized design - prefer these by default) */
   --calendar-header-text: #ffffff;
   --calendar-cell-text: #27C8B6;
   --calendar-cell-bg: transparent;
@@ -37,11 +38,9 @@
   --button-primary-text: #fff;
   --button-secondary: #56DFCF;
   --button-secondary-text: #184138;
-  --font-family: 'Helvetica Neue', Arial, sans-serif;
   --mood-label: #1DAA9A;
   --journal-label: #56DFCF;
 }
-
 /* Main */
 .calendarRoot {
   min-height: 100vh;
