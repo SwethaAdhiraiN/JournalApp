@@ -475,27 +475,20 @@ function CalendarPage() {
             week.map((dateNum, didx) => renderDayCell(dateNum, widx, didx))
           )}
         </div>
+        {/* SHOW: clicked date's journal & mood just below calendar */}
         <div className={styles.moodDisplay} aria-live="polite">
-          {/* Show details for selectedDate, or for today if none */}
           {(() => {
-            let dateToShow, moodToShow, journalToShow;
-            if (selectedDate) {
-              const yearStr = String(selectedDate.year);
-              const monthStr = String(selectedDate.month + 1).padStart(2, "0");
-              const dayStr = String(selectedDate.date).padStart(2, "0");
-              const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
-              const md = moodByDate[dateStr] || [];
-              moodToShow = md[md.length - 1] || null;
-              journalToShow = journalByDate[dateStr] || "";
-              dateToShow = dateStr;
-            } else {
-              // fallback: today
-              const todayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(today.date).padStart(2, "0")}`;
-              const md = moodByDate[todayStr] || [];
-              moodToShow = md[md.length - 1] || null;
-              journalToShow = journalByDate[todayStr] || "";
-              dateToShow = todayStr;
-            }
+            // If a date is selected via click, show that; otherwise, nothing.
+            if (!selectedDate) return null;
+            const yearStr = String(selectedDate.year);
+            const monthStr = String(selectedDate.month + 1).padStart(2, "0");
+            const dayStr = String(selectedDate.date).padStart(2, "0");
+            const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+            const moodsArr = moodByDate[dateStr] || [];
+            // Always show most recent mood for details; but could expand for more if desired
+            const moodToShow = moodsArr.length > 0 ? moodsArr[moodsArr.length - 1] : null;
+            const journalToShow = journalByDate[dateStr] || "";
+
             return (
               <>
                 {moodToShow && (
@@ -511,6 +504,11 @@ function CalendarPage() {
                     <span className={styles.journalIcon} title="Journal entry">📝</span>
                     <span>{journalToShow}</span>
                   </div>
+                )}
+                {!moodToShow && !journalToShow && (
+                  <span style={{ color: "#BDBDBD" }}>
+                    No mood or journal entry for this date.
+                  </span>
                 )}
               </>
             );
