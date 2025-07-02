@@ -103,38 +103,30 @@ function CalendarPage() {
 
   // Fetch all mood and journal entries for user, month
   useEffect(() => {
-    /** On mount: fetch mood.json and journal.json entries for the user and set state for this month */
-    async function fetchData() {
+    /**
+     * On mount: fetch mood and journal data from the backend for the logged-in user.
+     * Populates state to display mood emoji for each calendar date where a mood is present.
+     */
+    async function fetchUserData() {
       const username = localStorage.getItem("journalapp-username");
       if (!username) return;
 
-      // Helper: fetch JSON file from backend, return {} or parsed object
-      async function fetchUserFile(apiPath) {
-        try {
-          const res = await fetch(`${API_BASE_URL}/${apiPath}`);
-          if (!res.ok) return {};
-          const data = await res.json();
-          return typeof data === "object" && data !== null ? data : {};
-        } catch {
-          return {};
-        }
-      }
-
-      // --- Fetch mood.json (GET /mood.json or static file)
-      // The backend stores moods as { username: { date: [mood1, mood2, ...], ... }, ... }
+      // Fetch mood data for logged in user
       let moods = {};
       try {
-        const res = await fetch(`${API_BASE_URL}/../database/mood.json`); // direct DB file
+        // Backend exposes the data file directly for this simplified MVP
+        const res = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/../database/mood.json`, { method: "GET" });
         if (res.ok) {
           moods = await res.json();
         }
       } catch {
         moods = {};
       }
-      // --- Fetch journal.json
+
+      // Fetch journal data for logged in user
       let journals = {};
       try {
-        const res2 = await fetch(`${API_BASE_URL}/../database/journal.json`);
+        const res2 = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/../database/journal.json`, { method: "GET" });
         if (res2.ok) {
           journals = await res2.json();
         }
@@ -142,34 +134,29 @@ function CalendarPage() {
         journals = {};
       }
 
-      // moods[username]: { 'YYYY-MM-DD': [mood1, ...], ... }
-      // journals[username]: { 'YYYY-MM-DD': [text, ...], ... }
+      // Only show mood/journal entries for dates that actually appear in this month's calendar
       const moodObj = {};
       const journalObj = {};
       const yearStr = String(year);
       const monthStr = String(month + 1).padStart(2, "0");
 
-      // Helper to build all dates in this calendar month grid (YYYY-MM-DD)
-      function getAllDatesOfMonthGrid(year, month, weeks) {
+      function getCalendarDates(year, month, weeks) {
         const days = [];
-        for (const wk of weeks) {
-          for (const d of wk) {
+        for (const week of weeks) {
+          for (const d of week) {
             if (d) {
-              const ds = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-              days.push(ds);
+              days.push(`${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
             }
           }
         }
         return days;
       }
-      const calendarDates = getAllDatesOfMonthGrid(year, month, calendarWeeks);
 
-      // Last mood for date (handle multiple)
-      if (moods[username]) {
+      const calendarDates = getCalendarDates(year, month, calendarWeeks);
+
+      if (moods && moods[username]) {
         Object.entries(moods[username]).forEach(([date, moodArr]) => {
           if (calendarDates.includes(date) && Array.isArray(moodArr) && moodArr.length > 0) {
-            // Last mood of that day (could show all, but use last as "active")
-            // If label is unknown, display as text
             const label = moodArr[moodArr.length - 1];
             moodObj[date] = {
               label,
@@ -178,10 +165,10 @@ function CalendarPage() {
           }
         });
       }
-      if (journals[username]) {
+
+      if (journals && journals[username]) {
         Object.entries(journals[username]).forEach(([date, journalArr]) => {
           if (calendarDates.includes(date) && Array.isArray(journalArr) && journalArr.length > 0) {
-            // Use last entry for display
             journalObj[date] = journalArr[journalArr.length - 1];
           }
         });
@@ -190,13 +177,15 @@ function CalendarPage() {
       setMoodByDate(moodObj);
       setJournalByDate(journalObj);
 
-      // For today: set display mood/journal (special case for the modal)
+      // Set today's data for modal display
       const todayStr = `${yearStr}-${monthStr}-${String(today.date).padStart(2, "0")}`;
       setMood(moodObj[todayStr] || null);
       setJournal(journalObj[todayStr] || "");
     }
-    fetchData();
-    // Only run on mount and when year/month changes (for single-month, this is ok)
+
+    fetchUserData();
+
+    // Rerun on month or year change (single month for this design)
     // eslint-disable-next-line
   }, [year, month]);
 
