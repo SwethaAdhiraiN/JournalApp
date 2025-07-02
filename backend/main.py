@@ -100,6 +100,43 @@ async def signup(signup: SignupRequest):
     save_all_users(users)
 
     return SignupResponse(message="Signup successful.")
+# Request model for login
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=32, description="Registered username.")
+    password: str = Field(..., min_length=5, max_length=128, description="Password for the account.")
+
+# Response model for login
+class LoginResponse(BaseModel):
+    message: str = Field(..., description="Login result message")
+
+# PUBLIC_INTERFACE
+@app.post("/login", response_model=LoginResponse, tags=["auth"], summary="Log in",
+          description="Check submitted credentials against users.json. On success, returns 'Login Successful'.")
+async def login(login: LoginRequest):
+    """
+    Attempt to log in a user by verifying credentials.
+
+    Reads JournalApp/database/users.json, checks if the username exists, then verifies
+    the password (hashed with SHA-256) against the stored hash.
+
+    Args:
+        login (LoginRequest): The username and password.
+
+    Returns:
+        LoginResponse: {"message": "Login Successful"} on success; error on mismatch.
+    """
+    # Load all users
+    users = load_all_users()
+
+    user = next((u for u in users if u.get("username", "").lower() == login.username.lower()), None)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+
+    hashed_input_pw = hashlib.sha256(login.password.encode("utf-8")).hexdigest()
+    if hashed_input_pw != user.get("password", ""):
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+
+    return LoginResponse(message="Login Successful")
 
 # For local/development use: health endpoint
 @app.get("/", tags=["health"])
