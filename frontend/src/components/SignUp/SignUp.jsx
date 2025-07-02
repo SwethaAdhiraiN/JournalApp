@@ -1,14 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './SignUp.module.css';
 
-// PUBLIC_INTERFACE
 function SignUp() {
-  /**
-   * Sign Up page for JournalApp.
-   * Implements client-side field validation, API call to /signup,
-   * styled notification banner for success/errors, and navigation on success.
-   */
   const [form, setForm] = useState({
     username: '',
     password: '',
@@ -17,18 +10,15 @@ function SignUp() {
   const [errors, setErrors] = useState({});
   const [banner, setBanner] = useState({
     message: '',
-    type: '', // 'success' | 'error'
+    type: '',
     visible: false,
   });
   const [loading, setLoading] = useState(false);
-
   const bannerTimeout = useRef(null);
   const navigate = useNavigate();
 
-  // Validation logic
   function validateFields({ username, password, confirmPassword }) {
     const errs = {};
-    // Username: min 3, max 32, chars only (allow _ or -)
     if (!username || username.length < 3) {
       errs.username = 'Username must be at least 3 characters';
     } else if (username.length > 32) {
@@ -36,24 +26,18 @@ function SignUp() {
     } else if (!/^[a-zA-Z0-9_\-]+$/.test(username)) {
       errs.username = 'Username must use only letters, numbers, "_" or "-"';
     }
-
-    // Password: 5-128 chars
     if (!password || password.length < 5) {
       errs.password = 'Password must be at least 5 characters';
     } else if (password.length > 128) {
       errs.password = 'Password must be 128 characters or less';
     }
-
-    // Confirm password: must match
     if (confirmPassword !== password) {
       errs.confirmPassword = 'Passwords do not match';
     }
     return errs;
   }
 
-  // Banner notification logic
   function showBanner(message, type = 'error', duration = 3300) {
-    // Always clear any ongoing timeout.
     if (bannerTimeout.current) {
       clearTimeout(bannerTimeout.current);
     }
@@ -65,39 +49,29 @@ function SignUp() {
     }
   }
 
-  // Effect: Whenever a user edits any field, clear the banner.
   useEffect(() => {
-    // Not on initial mount, only on actual field change.
     if (banner.visible) {
       setBanner(b => ({ ...b, visible: false, message: '', type: '' }));
       if (bannerTimeout.current) clearTimeout(bannerTimeout.current);
     }
-    // eslint-disable-next-line
   }, [form.username, form.password, form.confirmPassword]);
 
-  // Clean up timeouts on unmount
   useEffect(() => {
     return () => {
       if (bannerTimeout.current) clearTimeout(bannerTimeout.current);
     };
   }, []);
 
-  // Handle form field changes
   const handleChange = (e) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
     setErrors({});
-    // Notification banner auto-clears on input change via effect.
   };
 
-  // PUBLIC_INTERFACE: Handle Submit Sign Up
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Client validation
     const foundErrors = validateFields(form);
     if (Object.keys(foundErrors).length > 0) {
       setErrors(foundErrors);
-      // Show only the highest-priority error as a banner for visibility
       if (foundErrors.username) {
         showBanner(foundErrors.username, 'error', 3500);
       } else if (foundErrors.password) {
@@ -107,10 +81,8 @@ function SignUp() {
       }
       return;
     }
-
     setLoading(true);
     try {
-      // Backend call
       const response = await fetch('http://localhost:8000/signup', {
         method: 'POST',
         headers: {
@@ -118,61 +90,221 @@ function SignUp() {
         },
         body: JSON.stringify(form)
       });
-
       const data = await response.json();
-
       if (!response.ok) {
-        // Backend error (400, 409, etc): always show banner with backend's detail
         showBanner(typeof data.detail === 'string' ? data.detail : 'Signup failed.', 'error', 4000);
         setLoading(false);
         return;
       }
-
-      // Success! Show success notification and brief delay before redirect
       setErrors({});
       showBanner('Signup successful: User details added to users.json', 'success', 2200);
       setLoading(false);
-      setTimeout(() => {
-        navigate('/login');
-      }, 1200); // Wait for notification before redirecting
+      setTimeout(() => { navigate('/login'); }, 1200);
     } catch (err) {
       showBanner('Could not connect to server. Please try again.', 'error', 4000);
       setLoading(false);
     }
   };
 
-  // PUBLIC_INTERFACE: Navigate to login
   const goToLogin = (e) => {
     e.preventDefault();
     navigate('/login');
   };
 
+  const rootStyle = {
+    minHeight: '100vh',
+    width: '100vw',
+    background: 'var(--bg-main)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    fontFamily: 'var(--font-family)'
+  };
+
+  const bottomCurveStyle = {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    width: '100vw',
+    height: '26vh',
+    background: 'var(--bg-curve)',
+    borderTopLeftRadius: '70vw 12vh',
+    borderTopRightRadius: '70vw 12vh',
+    zIndex: 0,
+    boxShadow: '0 -2px 20px 0 rgba(20,200,183,0.04)',
+    pointerEvents: 'none'
+  };
+
+  const centerWrapStyle = {
+    position: 'relative',
+    width: '100vw',
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2
+  };
+
+  const bannerBaseStyle = {
+    display: 'block',
+    width: '100%',
+    maxWidth: 350,
+    boxSizing: 'border-box',
+    textAlign: 'center',
+    fontSize: '1.03rem',
+    fontFamily: 'var(--font-family)',
+    fontWeight: 600,
+    letterSpacing: '0.01em',
+    borderRadius: 6,
+    margin: '0 auto 18px auto',
+    padding: '13px 18px 13px 18px',
+    position: 'relative',
+    boxShadow: '0px 2px 11px 0 rgba(23,87,83,0.13)',
+    zIndex: 20,
+    transition: 'opacity 0.23s, transform 0.18s',
+    opacity: 1,
+    transform: 'translateY(0px)',
+    outline: 'none'
+  };
+
+  const bannerSuccessStyle = {
+    background: '#d2f4e5',
+    color: '#13795a',
+    border: '1.5px solid #43b991'
+  };
+
+  const bannerErrorStyle = {
+    background: '#fcdddd',
+    color: '#c03528',
+    border: '1.4px solid #e88e8a'
+  };
+
+  const formStyle = {
+    width: '100%',
+    maxWidth: 350,
+    marginTop: '13vh',
+    marginBottom: 0,
+    padding: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    background: 'transparent',
+    zIndex: 1
+  };
+
+  const headingStyle = {
+    fontSize: '2rem',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    textAlign: 'center',
+    marginTop: 0,
+    marginBottom: '2rem',
+    fontFamily: 'var(--font-family)',
+    letterSpacing: '0.01em'
+  };
+
+  const inputStyle = {
+    width: '100%',
+    maxWidth: 330,
+    height: 40,
+    marginBottom: '1rem',
+    border: 'none',
+    borderRadius: 6,
+    background: 'var(--form-bg)',
+    padding: '0 16px',
+    fontSize: '1rem',
+    fontFamily: 'var(--font-family)',
+    color: 'var(--text-input)',
+    fontWeight: 400,
+    outline: 'none',
+    transition: 'box-shadow 0.16s, background 0.16s',
+    boxSizing: 'border-box'
+  };
+
+  const inputFocusStyle = {
+    background: '#e3fbf5',
+    boxShadow: '0 0 0 2px #29bab5'
+  };
+
+  const buttonStyle = {
+    width: '100%',
+    height: 44,
+    marginTop: '1.3rem',
+    marginBottom: '1.2rem',
+    borderRadius: 6,
+    border: 'none',
+    background: 'var(--button-bg)',
+    color: 'var(--button-text)',
+    fontFamily: 'var(--font-family)',
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'background 0.14s, color 0.14s',
+    boxShadow: '0px 2px 9px 0 rgba(20,76,76,0.07)',
+    letterSpacing: '0.01em',
+    outline: 'none'
+  };
+
+  const buttonHoverStyle = {
+    background: '#066c75'
+  };
+
+  const footerStyle = {
+    marginTop: '1.3rem',
+    textAlign: 'center',
+    fontSize: '0.96rem',
+    color: 'var(--text-footer)',
+    fontFamily: 'var(--font-family)',
+    fontWeight: 400,
+    zIndex: 2,
+    userSelect: 'none'
+  };
+
+  const loginLinkStyle = {
+    color: 'var(--link)',
+    fontWeight: 700,
+    marginLeft: 4,
+    cursor: 'pointer',
+    textDecoration: 'underline transparent',
+    transition: 'text-decoration-color 0.14s, color 0.14s'
+  };
+
+  const loginLinkHoverStyle = {
+    color: '#055b5c',
+    textDecorationColor: '#1ac9c6'
+  };
+
+  const errorStyle = {
+    color: '#c03528',
+    fontSize: '0.93em',
+    marginBottom: '0.5rem',
+    textAlign: 'left',
+    width: '100%'
+  };
+
   return (
-    <div className={styles.signupRoot}>
-      {/* BG: Main color and arc curve */}
-      <div className={styles.bottomCurve} />
-      <div className={styles.centerWrap}>
-        {/* Banner notification at top of form – always positioned above */}
+    <div style={rootStyle}>
+      <div style={bottomCurveStyle}/>
+      <div style={centerWrapStyle}>
         {banner.visible && banner.message && (
           <div
-            className={
-              styles.banner + ' ' +
-              (banner.type === 'success'
-                ? styles.bannerSuccess
-                : styles.bannerError)
-            }
-            role={banner.type === 'success' ? "status" : "alert"}
+            style={{
+              ...bannerBaseStyle,
+              ...(banner.type === 'success' ? bannerSuccessStyle : bannerErrorStyle)
+            }}
+            role={banner.type === 'success' ? 'status' : 'alert'}
             aria-live="polite"
             data-testid="signup-notification"
           >
             {banner.message}
           </div>
         )}
-        <form className={styles.form} autoComplete="off" onSubmit={handleSubmit} noValidate>
-          <h2 className={styles.heading}>Sign Up</h2>
-
+        <form style={formStyle} autoComplete="off" onSubmit={handleSubmit} noValidate>
+          <h2 style={headingStyle}>Sign Up</h2>
           <input
-            className={styles.input}
+            style={inputStyle}
             type="text"
             name="username"
             placeholder="Username"
@@ -185,13 +317,12 @@ function SignUp() {
             aria-describedby={errors.username ? 'signup-username-error' : undefined}
           />
           {errors.username && (
-            <div id="signup-username-error" style={{ color: '#c03528', fontSize: '0.93em', marginBottom: "0.5rem", textAlign: 'left', width: '100%' }}>
+            <div id="signup-username-error" style={errorStyle}>
               {errors.username}
             </div>
           )}
-
           <input
-            className={styles.input}
+            style={inputStyle}
             type="password"
             name="password"
             placeholder="Password"
@@ -204,13 +335,12 @@ function SignUp() {
             aria-describedby={errors.password ? 'signup-password-error' : undefined}
           />
           {errors.password && (
-            <div id="signup-password-error" style={{ color: '#c03528', fontSize: '0.93em', marginBottom: "0.5rem", textAlign: 'left', width: '100%' }}>
+            <div id="signup-password-error" style={errorStyle}>
               {errors.password}
             </div>
           )}
-
           <input
-            className={styles.input}
+            style={inputStyle}
             type="password"
             name="confirmPassword"
             placeholder="Confirm Password"
@@ -223,18 +353,36 @@ function SignUp() {
             aria-describedby={errors.confirmPassword ? 'signup-confirm-error' : undefined}
           />
           {errors.confirmPassword && (
-            <div id="signup-confirm-error" style={{ color: '#c03528', fontSize: '0.93em', marginBottom: "0.5rem", textAlign: 'left', width: '100%' }}>
+            <div id="signup-confirm-error" style={errorStyle}>
               {errors.confirmPassword}
             </div>
           )}
-
-          <button className={styles.signupButton} type="submit" disabled={loading}>
+          <button
+            style={buttonStyle}
+            type="submit"
+            disabled={loading}
+            onMouseOver={e => { e.currentTarget.style.background = '#066c75'; }}
+            onMouseOut={e => { e.currentTarget.style.background = 'var(--button-bg)'; }}
+          >
             {loading ? 'Signing Up...' : 'Sign Up'}
           </button>
         </form>
-        <div className={styles.footer}>
+        <div style={footerStyle}>
           Already have an account?{' '}
-          <a className={styles.loginLink} href="/login" onClick={goToLogin}>
+          <a
+            style={loginLinkStyle}
+            href="/login"
+            onClick={goToLogin}
+            onMouseOver={e => {
+              e.currentTarget.style.color = '#055b5c';
+              e.currentTarget.style.textDecorationColor = '#1ac9c6';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.color = 'var(--link)';
+              e.currentTarget.style.textDecorationColor = 'transparent';
+            }}
+            tabIndex={0}
+          >
             Log In
           </a>
         </div>
