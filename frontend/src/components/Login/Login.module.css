@@ -36,7 +36,6 @@
   box-shadow: 0 -2px 20px 0 rgba(20,200,183,0.04);
   pointer-events: none;
 }
-
 /* Centered main content+form on top of bottomArc */
 .centerWrap {
   position: relative;
@@ -49,6 +48,41 @@
   z-index: 2;
 }
 
+/* Notification banner/alert above the form */
+.banner {
+  display: block;
+  width: 100%;
+  max-width: 350px;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: 1.03rem;
+  font-family: var(--font-family);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-radius: var(--border-radius);
+  margin: 0 auto 18px auto;
+  padding: 13px 18px 13px 18px;
+  position: relative;
+  /* nice shadow for prominence */
+  box-shadow: 0px 2px 11px 0 rgba(23,87,83,0.13);
+  z-index: 20;
+  transition: opacity 0.23s, transform 0.18s;
+  opacity: 1;
+  transform: translateY(0px);
+  outline: none;
+}
+.bannerSuccess {
+  background: #d2f4e5;      /* very light mint/green */
+  color: #13795a;           /* strong green */
+  border: 1.5px solid #43b991;
+}
+.bannerError {
+  background: #fcdddd;      /* very light red/pink */
+  color: #c03528;           /* strong red */
+  border: 1.4px solid #e88e8a;
+}
+
+/* Form styles */
 .form {
   width: 100%;
   max-width: 350px;
