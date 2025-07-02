@@ -1,13 +1,36 @@
 :root {
-  --primary-bg: #19C8B8;
-  --secondary-bg: #80E0D0;
-  --accent: #295B57;
-  --button-bg: #F6F8ED;
-  --heading-text: #294742;
-  --subheading-text: #425C53;
-  --canvas-bg: #FFF2EC;
+  /* Extracted exact colors from homepage_color_palette.md */
+  --primary-bg: #14C8B7; /* Top Background Teal */
+  --hero-curve-bg: #63D6C4; /* Mid Gradient Aqua */
+  --bottom-blush-bg: #FFF2EE; /* Lower Background Off-White / Blush */
+  --headline-text: #175753; /* Headline, Button Label */
+  --subtext: #319C91; /* Subtext */
+  --btn-login-bg: #175753;
+  --btn-login-text: #FFF2EE;
+  --btn-signup-bg: #EBF7EF;
+  --btn-signup-text: #175753;
   --border-radius: 12px;
   --font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Map legacy variable names to new ones for compatibility; all homepage imports should use new names */
+html, body {
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-family);
+  background: var(--bottom-blush-bg);
+  min-height: 100vh;
+  width: 100vw;
+  letter-spacing: 0.01em;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+button:focus {
+  outline: 2px solid var(--headline-text);
+  outline-offset: 1px;
 }
 
 html, body {
