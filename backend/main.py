@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -90,8 +91,11 @@ async def signup(signup: SignupRequest):
         if user.get("username", "").lower() == signup.username.lower():
             raise HTTPException(status_code=409, detail="Username already exists.")
 
+    # Hash the password
+    hashed_pw = hashlib.sha256(signup.password.encode("utf-8")).hexdigest()
+
     # Persist the new user
-    new_user = {"username": signup.username, "password": signup.password}
+    new_user = {"username": signup.username, "password": hashed_pw}
     users.append(new_user)
     save_all_users(users)
 
