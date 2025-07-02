@@ -3,16 +3,38 @@ import { useNavigate } from "react-router-dom";
 import styles from "./CalendarPage.module.css";
 import { API_BASE_URL } from "../../config";
 
-// Moods and emoji used for mood selection
+/**
+ * Expanded moods/emojis. Full spectrum to capture richer emotional diversity.
+ * (If you want to customize further, edit this list).
+ */
 const MOOD_EMOJIS = [
-  { label: "Happy", emoji: "😃" },
-  { label: "Content", emoji: "😊" },
+  { label: "Excited", emoji: "😃" },
+  { label: "Happy", emoji: "😊" },
+  { label: "Content", emoji: "🙂" },
+  { label: "Loved", emoji: "🥰" },
+  { label: "Grateful", emoji: "🙏" },
+  { label: "Relaxed", emoji: "😌" },
+  { label: "Proud", emoji: "😎" },
+  { label: "Energetic", emoji: "⚡️" },
   { label: "Neutral", emoji: "😐" },
-  { label: "Sad", emoji: "😢" },
-  { label: "Angry", emoji: "😠" },
-  { label: "Excited", emoji: "🤩" },
+  { label: "Bored", emoji: "😒" },
   { label: "Tired", emoji: "🥱" },
+  { label: "Sad", emoji: "😢" },
+  { label: "Lonely", emoji: "🥲" },
+  { label: "Anxious", emoji: "😰" },
+  { label: "Stressed", emoji: "😩" },
+  { label: "Angry", emoji: "😠" },
+  { label: "Frustrated", emoji: "😤" },
+  { label: "Confused", emoji: "😕" },
+  { label: "Worried", emoji: "😟" },
+  { label: "Sick", emoji: "🤒" },
+  { label: "Scared", emoji: "😨" },
+  { label: "Hopeful", emoji: "🤞" },
+  { label: "Motivated", emoji: "💪" },
+  { label: "Surprised", emoji: "😲" },
+  { label: "Calm", emoji: "🧘" }
 ];
+// You can adjust this list as desired!
 
 /**
  * Lookup map: {label: emoji, ...}
