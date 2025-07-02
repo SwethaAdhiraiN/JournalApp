@@ -1,76 +1,81 @@
-# JournalApp Backend
+# JournalApp Backend (Flask Edition)
 
-This backend provides a signup endpoint to receive validated username and password information and persists users to the database/users.json file.
+This directory provides a Flask REST backend for authentication for the JournalApp project.
 
-## Debug note (2024-07): 
-If main.py is reloading repeatedly, investigate for temp/editor/sync files in this directory using:
-- `ls -la` to list all files (including hidden dotfiles).
-- Look for `.swp`, `.tmp`, `.~`, or files named like `main.py~` or `.#main.py`.
-- Check if `.users.json.tmp` files are written here (should be outside backend/).
-Check permissions with:
-- `ls -la JournalApp/backend`
+## Endpoints
 
-Reload loops may be caused by:
-- Cloud sync or backup tools writing shadow files
-- Multiple editors open or auto-formatting aggressively
-- Permission errors preventing stable writes
+### POST `/signup`
 
-## VS Code/Code-Server Specific Note
+> Accepts:  
+> `{ "username": str, "password": str, "confirmPassword": str }`
 
-If you are running VS Code or code-server (either locally or in browser), be aware:
-- The built-in file watcher may save shadow/lock/temp files (.code-workspace, .~main.py, .#main.py, .main.py.swp, etc) in the backend folder if you have VS Code settings like `files.autoSave: afterDelay`, autosave extensions, or aggressive formatters installed. 
-- Cloud editing/sync (Dropbox, Google Drive, OneDrive, etc) can also write hidden shadow or backup files which trigger backend/main.py reload.
-- Recommended: Disable automatic workspace storage in project directory, and do NOT use extensions that write local shadow or lock files in watched uvicorn directory.
-- Always save atomically outside the backend/ tree; see FastAPI/uvicorn WatchFiles docs for more info.
+- Validates username (3-32 chars, unique, case-insensitive) and password (5-128 chars).
+- Rejects signups with passwords that do not match or usernames that already exist.
+- Password is securely hashed (SHA-256) in the persistent database.
+- Saves user to `journalapp_data/users.json` (outside backend/ source tree).
 
-If you observe frequent reloads without code changes:
-1. Check for hidden/backup/temp files in backend/. If present, update editor/external tool config to avoid saving or syncing shadow files in backend/.
-2. Try running backend/editor in a directory outside watched folders, or disable auto-save/auto-backup.
-3. Use `uvicorn main:app --reload --reload-dir backend` (not --reload-dir ..) for minimal watch scope.
+Returns:
+- Success: `{ "message": "Signup successful." }`
+- Error: `{ "detail": "Error reason..." }` (HTTP 400/409)
 
-## Features
+### POST `/login`
 
-- POST /signup: Validates that `password == confirmPassword` and that `username` is unique, and appends the new user as JSON to `../database/users.json`.
-- File is created automatically if it doesn't exist.
-- Simple Python FastAPI implementation.
+> Accepts:  
+> `{ "username": str, "password": str }`
 
-## Run Locally
+- Looks up user by username (case-insensitive).
+- Hashes password and compares to stored hash.
+- On match: returns `{ "message": "Login Successful" }`.
+- Else: `{ "detail": "Invalid username or password." }` (HTTP 401)
 
-From the `JournalApp/backend` directory:
+### GET `/`
 
-```bash
-pip install -r requirements.txt
-# IMPORTANT: Only reload on backend code, not on database file writes!
-# Use this for seamless dev, or you may get *infinite reload loops* if users.json updates:
-uvicorn main:app --reload --reload-dir backend
-```
+- Simple health check endpoint.
+- Returns: `{ "status": "ok" }`
 
-OpenAPI docs will be available at `http://localhost:8000/docs` when running.
+## User Data Storage
 
-# Note on Hot Reload and Data
-- The backend will save user info to a data file OUTSIDE the backend source tree (see main.py).
-- If you must keep user data inside the source folder, reload will loop on every signup/login.
-- Always use `--reload-dir backend` with uvicorn for development!
-- **Never write atomic temp files (like .tmp created during data save) into backend or its subfolders**: If you edit code to change database structure or save atomically, `.tmp` files in backend/ will trigger WatchFiles reloads as if source code changed. *All data and temp files must be kept outside the backend watched tree, e.g., in journalapp_data only.*
+- All users are stored as a JSON list in `journalapp_data/users.json` at the project root for safety.
+- The backend will create the directory and JSON file as needed.
+- Never edit `users.json` manually unless you know what you're doing.
 
-### Signup Request
+## CORS
 
-`POST /signup`
+- CORS is enabled (accepts requests from any origin, suitable for local frontend development).
+- For production, restrict allowed origins in `main.py` by changing the `CORS(app, ...)` config.
 
-```json
-{
-  "username": "alice",
-  "password": "pass1234",
-  "confirmPassword": "pass1234"
-}
-```
+## Setup & Local Run
 
-A successful response will return:
+1. Install Python dependencies:
 
-```json
-{
-  "message": "Signup successful."
-}
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-If username is taken or passwords don't match, an appropriate error will be returned.
+2. Run the backend:
+
+   ```bash
+   # From JournalApp/backend/
+   python main.py
+   # (server listens on 0.0.0.0:8000)
+   ```
+
+3. Frontend can POST to `http://localhost:8000/signup` and `/login`.
+
+4. User data is saved to `../../journalapp_data/users.json`.
+
+## API Contract
+
+See `/signup` and `/login` endpoint notes above for expected request/response fields.
+All responses are application/json.  
+On error, HTTP status and `{ "detail": "...error..." }` key will describe the reason.
+
+## Dev Notes
+
+- For production use, run with gunicorn/uwsgi and restrict CORS origins.
+- When developing, backend hot reloading in Flask does **not** suffer from the reload loop issues present with FastAPI/uvicorn if users.json is outside backend/.
+
+---
+
+**2024-07**: This is a Flask-based version. For original FastAPI code, see earlier commits.
+

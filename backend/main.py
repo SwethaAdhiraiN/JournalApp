@@ -1,56 +1,30 @@
 import os
 import json
 import hashlib
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
-# Path for users.json data file
-# Move users.json OUTSIDE of backend watched folders (to avoid uvicorn reload loop on file writes)
+# ---- Flask App Config ----
+app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
+# Path config for users.json (persistent user database OUTSIDE backend/ tree)
 BASE_PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 USERS_DB_DIR = os.path.join(BASE_PROJECT_DIR, "journalapp_data")
 USERS_DB_FILE = os.path.join(USERS_DB_DIR, "users.json")
 
-# Make sure the external database directory exists
+# Ensure data dir exists
 os.makedirs(USERS_DB_DIR, exist_ok=True)
 
-app = FastAPI(
-    title="JournalApp Auth API",
-    description="Signup and login endpoints for JournalApp. Stores users in users.json file.",
-    version="1.0.0",
-    openapi_tags=[{"name": "auth", "description": "User signup and login"}]
-)
-
-# Allow frontend connection (CORS for development)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Adjust as needed for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
-
-
-# Request model for signup
-class SignupRequest(BaseModel):
-    username: str = Field(..., min_length=3, max_length=32, description="Desired username. Must be unique.")
-    password: str = Field(..., min_length=5, max_length=128, description="Password for the account.")
-    confirmPassword: str = Field(..., min_length=5, max_length=128, description="Password again to confirm.")
-
-# Response model for success
-class SignupResponse(BaseModel):
-    message: str = Field(..., description="Status message")
-
-# Utilities
+# ---- Data utility functions ----
 
 def load_all_users():
-    """Load the list of user dicts from users.json, or return empty list if file does not exist/corrupt."""
+    """Load all users from users.json, or empty list if none exist/corrupt."""
     try:
         if not os.path.exists(USERS_DB_FILE):
             return []
         with open(USERS_DB_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            # Defensive: ensure data is a list
             if isinstance(data, list):
                 return data
             return []
@@ -58,94 +32,109 @@ def load_all_users():
         return []
 
 def save_all_users(users):
-    """Write the user list to users.json (atomic).
-    Ensures .tmp file is written in the same external journalapp_data dir — not backend/ — 
-    to prevent uvicorn/WatchFiles reload loop on temp file creation.
-    """
-    # tmp file must be in journalapp_data, not backend dir
-    tmpfile = os.path.join(os.path.dirname(USERS_DB_FILE), "users.json.tmp")
+    """Write user array to users.json atomically. Use .tmp file in same dir to avoid backend reload loops."""
+    tmpfile = os.path.join(USERS_DB_DIR, "users.json.tmp")
     with open(tmpfile, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=2)
     os.replace(tmpfile, USERS_DB_FILE)
 
+def hash_password(pw):
+    """Hashes the password using SHA-256."""
+    return hashlib.sha256(pw.encode("utf-8")).hexdigest()
+
+# ---- API Route Definitions ----
+
 # PUBLIC_INTERFACE
-@app.post("/signup", response_model=SignupResponse, tags=["auth"], summary="Sign up a new user",
-          description="Create a new user account if the username is unique and password matches confirmation.")
-async def signup(signup: SignupRequest):
+@app.route("/signup", methods=["POST"])
+def signup():
     """
-    Sign up a new user.
-    - Validates that password and confirmPassword match.
-    - Validates that the username does not already exist in users.json.
-    - Stores the new user as a JSON entry in JournalApp/database/users.json.
-    Password hashing is omitted for this demo implementation.
+    User signup endpoint.
 
-    Args:
-        signup (SignupRequest): The username, password, and confirmPassword.
+    POST JSON: { "username": str, "password": str, "confirmPassword": str }
 
-    Returns:
-        SignupResponse: Status message of sign-up.
+    - Username must be unique (case-insensitive).
+    - Passwords must match.
+    - On success: Saves user to users.json (with hashed password).
+    - Returns: { "message": "Signup successful." }
+
+    Error cases: { "detail": "..." }, status 400/409
     """
-    # Check passwords match
-    if signup.password != signup.confirmPassword:
-        raise HTTPException(status_code=400, detail="Password and confirm password do not match.")
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify(detail="No JSON body sent."), 400
 
-    # Load existing users
+    # Field validation
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+    confirm_password = data.get("confirmPassword") or ""
+
+    # Enforce requirements
+    if not username or len(username) < 3 or len(username) > 32:
+        return jsonify(detail="Username must be 3-32 characters."), 400
+    if not password or len(password) < 5 or len(password) > 128:
+        return jsonify(detail="Password must be 5-128 characters."), 400
+    if password != confirm_password:
+        return jsonify(detail="Password and confirm password do not match."), 400
+
     users = load_all_users()
 
-    # Check that username is unique (case-insensitive)
+    # Check uniqueness
     for user in users:
-        if user.get("username", "").lower() == signup.username.lower():
-            raise HTTPException(status_code=409, detail="Username already exists.")
+        if user.get("username", "").lower() == username.lower():
+            return jsonify(detail="Username already exists."), 409
 
-    # Hash the password
-    hashed_pw = hashlib.sha256(signup.password.encode("utf-8")).hexdigest()
+    # Hash and save
+    hashed_pw = hash_password(password)
+    users.append({"username": username, "password": hashed_pw})
+    try:
+        save_all_users(users)
+    except Exception:
+        return jsonify(detail="Could not write user file."), 500
 
-    # Persist the new user
-    new_user = {"username": signup.username, "password": hashed_pw}
-    users.append(new_user)
-    save_all_users(users)
-
-    return SignupResponse(message="Signup successful.")
-# Request model for login
-class LoginRequest(BaseModel):
-    username: str = Field(..., min_length=3, max_length=32, description="Registered username.")
-    password: str = Field(..., min_length=5, max_length=128, description="Password for the account.")
-
-# Response model for login
-class LoginResponse(BaseModel):
-    message: str = Field(..., description="Login result message")
+    return jsonify(message="Signup successful."), 200
 
 # PUBLIC_INTERFACE
-@app.post("/login", response_model=LoginResponse, tags=["auth"], summary="Log in",
-          description="Check submitted credentials against users.json. On success, returns 'Login Successful'.")
-async def login(login: LoginRequest):
+@app.route("/login", methods=["POST"])
+def login():
     """
-    Attempt to log in a user by verifying credentials.
+    User login endpoint.
 
-    Reads JournalApp/database/users.json, checks if the username exists, then verifies
-    the password (hashed with SHA-256) against the stored hash.
+    POST JSON: { "username": str, "password": str }
 
-    Args:
-        login (LoginRequest): The username and password.
-
-    Returns:
-        LoginResponse: {"message": "Login Successful"} on success; error on mismatch.
+    - Looks up user by username (case-insensitive).
+    - Hashes provided password and compares to stored hash.
+    - On success: { "message": "Login Successful" }
+    - On failure: { "detail": "Invalid username or password." }, status 401
     """
-    # Load all users
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify(detail="No JSON body sent."), 400
+
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+
+    if not username or len(username) < 3 or len(username) > 32:
+        return jsonify(detail="Invalid username or password."), 401
+    if not password or len(password) < 5 or len(password) > 128:
+        return jsonify(detail="Invalid username or password."), 401
+
     users = load_all_users()
-
-    user = next((u for u in users if u.get("username", "").lower() == login.username.lower()), None)
+    user = next((u for u in users if u.get("username", "").lower() == username.lower()), None)
     if user is None:
-        raise HTTPException(status_code=401, detail="Invalid username or password.")
+        return jsonify(detail="Invalid username or password."), 401
 
-    hashed_input_pw = hashlib.sha256(login.password.encode("utf-8")).hexdigest()
+    hashed_input_pw = hash_password(password)
     if hashed_input_pw != user.get("password", ""):
-        raise HTTPException(status_code=401, detail="Invalid username or password.")
+        return jsonify(detail="Invalid username or password."), 401
 
-    return LoginResponse(message="Login Successful")
+    return jsonify(message="Login Successful"), 200
 
-# For local/development use: health endpoint
-@app.get("/", tags=["health"])
+# PUBLIC_INTERFACE
+@app.route("/", methods=["GET"])
 def health():
-    """Simple health check endpoint."""
-    return {"status": "ok"}
+    """Health check endpoint for the service."""
+    return jsonify(status="ok")
+
+if __name__ == "__main__":
+    # Flask dev server launch for local runs. Deployment should use gunicorn/uwsgi.
+    app.run(host="0.0.0.0", port=8000, debug=True)
