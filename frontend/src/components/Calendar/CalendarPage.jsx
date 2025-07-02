@@ -242,9 +242,13 @@ function CalendarPage() {
     navigate("/", { replace: true });
   }
 
+  /**
+   * Always overwrite the mood or journal entry for today's date.
+   * If an entry for this date already exists, it will be replaced (frontend state & backend).
+   * If empty, do nothing.
+   */
   async function handleSave() {
     if (!tempMood && tempJournal.trim() === "") {
-      // No changes
       setModalOpen(false);
       return;
     }
@@ -255,7 +259,7 @@ function CalendarPage() {
     const day = today.date;
     const dateStr = `${yearStr}-${monthStr}-${String(day).padStart(2, "0")}`;
 
-    // Helper to POST to backend
+    // Generic POST function for mood/journal submission
     async function postToBackend(path, body) {
       try {
         const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -269,8 +273,8 @@ function CalendarPage() {
       }
     }
 
-    // Persist mood if changed
-    if (tempMood && (!mood || tempMood.emoji !== mood.emoji)) {
+    // Always POST mood and/or journal for today. This will overwrite any previous entry for the date (per backend).
+    if (tempMood) {
       await postToBackend("/submit-mood", {
         username,
         date: dateStr,
@@ -282,8 +286,7 @@ function CalendarPage() {
         [dateStr]: tempMood,
       }));
     }
-    // Persist journal if changed
-    if (tempJournal.trim() && tempJournal.trim() !== journal) {
+    if (tempJournal.trim()) {
       await postToBackend("/submit-journal", {
         username,
         date: dateStr,
