@@ -58,8 +58,12 @@ def load_all_users():
         return []
 
 def save_all_users(users):
-    """Write the user list to users.json (atomic)"""
-    tmpfile = USERS_DB_FILE + ".tmp"
+    """Write the user list to users.json (atomic).
+    Ensures .tmp file is written in the same external journalapp_data dir — not backend/ — 
+    to prevent uvicorn/WatchFiles reload loop on temp file creation.
+    """
+    # tmp file must be in journalapp_data, not backend dir
+    tmpfile = os.path.join(os.path.dirname(USERS_DB_FILE), "users.json.tmp")
     with open(tmpfile, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=2)
     os.replace(tmpfile, USERS_DB_FILE)

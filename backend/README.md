@@ -25,6 +25,7 @@ OpenAPI docs will be available at `http://localhost:8000/docs` when running.
 - The backend will save user info to a data file OUTSIDE the backend source tree (see main.py).
 - If you must keep user data inside the source folder, reload will loop on every signup/login.
 - Always use `--reload-dir backend` with uvicorn for development!
+- **Never write atomic temp files (like .tmp created during data save) into backend or its subfolders**: If you edit code to change database structure or save atomically, `.tmp` files in backend/ will trigger WatchFiles reloads as if source code changed. *All data and temp files must be kept outside the backend watched tree, e.g., in journalapp_data only.*
 
 ### Signup Request
 
