@@ -1,19 +1,26 @@
 :root {
-  /* Extracted exact colors from homepage_color_palette.md */
-  --primary-bg: #14C8B7; /* Top Background Teal */
-  --hero-curve-bg: #63D6C4; /* Mid Gradient Aqua */
-  --bottom-blush-bg: #FFF2EE; /* Lower Background Off-White / Blush */
-  --headline-text: #175753; /* Headline, Button Label */
-  --subtext: #319C91; /* Subtext */
+  /* Extracted exact colors from homepage_color_palette.md and design notes */
+  --primary-bg: #14C8B7;      /* Top Background Teal */
+  --hero-curve-bg: #63D6C4;   /* Mid Gradient Aqua */
+  --bottom-blush-bg: #FFF2EE; /* Lower Background Blush */
+  --headline-text: #175753;   /* Headline, Button Label */
+  --subtext: #319C91;         /* Subtext under heading */
   --btn-login-bg: #175753;
   --btn-login-text: #FFF2EE;
   --btn-signup-bg: #EBF7EF;
   --btn-signup-text: #175753;
+  --bg-primary: #17b6ab;      /* Design note: top solid */
+  --bg-arc: #4ddcd4;          /* Per design, not directly used */
+  --bg-accent: #faede8;       /* Per design note, used below */
+  --text-main: #184138;       /* All text, headings */
+  --button-primary-bg: #265248;
+  --button-primary-text: #fff;
+  --button-secondary-bg: #eafcf5;
+  --button-secondary-text: #265248;
   --border-radius: 12px;
   --font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Map legacy variable names to new ones for compatibility; all homepage imports should use new names */
 html, body {
   padding: 0;
   margin: 0;
@@ -30,24 +37,5 @@ html, body {
 
 button:focus {
   outline: 2px solid var(--headline-text);
-  outline-offset: 1px;
-}
-
-html, body {
-  padding: 0;
-  margin: 0;
-  font-family: var(--font-family);
-  background: var(--canvas-bg);
-  min-height: 100vh;
-  width: 100vw;
-  letter-spacing: 0.01em;
-}
-
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-button:focus {
-  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
