@@ -234,6 +234,19 @@
   display: inline-block;
 }
 
+/* Responsive vertical stack for all moods below the date */
+.moodStack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+  margin: 0;
+  padding: 0;
+  /* Allows moods to stack below number without shifting layout */
+  min-height: 0;
+}
+
 .dotEntry {
   display: inline-block;
   font-size: 2rem;

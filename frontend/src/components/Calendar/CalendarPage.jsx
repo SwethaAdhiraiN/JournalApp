@@ -124,16 +124,24 @@ function CalendarPage() {
   const navigate = useNavigate();
 
   // Fetch all mood and journal entries for user, month
+  // -- MODIFICATION: this effect will also re-run after login and on /calendar navigation (when localStorage username changes) --
   useEffect(() => {
     /**
-     * On mount: fetch mood and journal data for the logged-in user from the backend.
+     * On mount or after login: fetch mood and journal data for the logged-in user from the backend.
      * Populate state so the calendar visually reflects all mood entries (emoji under date).
+     * Now, also fetches entire mood history and displays all moods per date (not just one/the last one).
      */
     async function fetchUserData() {
       const username = localStorage.getItem("journalapp-username");
-      if (!username) return;
+      if (!username) {
+        setMoodByDate({});
+        setJournalByDate({});
+        setMood(null);
+        setJournal("");
+        return;
+      }
 
-      // Helper to POST to backend for moods (new endpoint)
+      // Helper to POST to backend for moods (returns: { date: [mood, ...], ... })
       async function fetchUserMoods() {
         try {
           const resp = await fetch(`${API_BASE_URL}/get-moods`, {
@@ -170,7 +178,7 @@ function CalendarPage() {
         fetchUserMoods(), fetchJson(journalUrl)
       ]);
 
-      // Track mood/journal only for visible dates in the current calendar month
+      // Gather moods/journal for all possible visible calendar dates (per Month)
       const moodObj = {};
       const journalObj = {};
       const yearStr = String(year);
@@ -191,15 +199,15 @@ function CalendarPage() {
 
       const calendarDates = getCalendarDates(year, month, calendarWeeks);
 
-      // Only keep mood entries of username for valid dates
+      // Build moodObj: for each date, store the full moods (array of objects: {label, emoji})
       if (userMoods) {
         Object.entries(userMoods).forEach(([date, moodArr]) => {
           if (calendarDates.includes(date) && Array.isArray(moodArr) && moodArr.length > 0) {
-            const lastMoodLabel = moodArr[moodArr.length - 1];
-            moodObj[date] = {
-              label: lastMoodLabel,
-              emoji: MOOD_LABEL_TO_EMOJI[lastMoodLabel] || "❓",
-            };
+            // Each date now stores a list (not just last)
+            moodObj[date] = moodArr.map((label) => ({
+              label,
+              emoji: MOOD_LABEL_TO_EMOJI[label] || "❓"
+            }));
           }
         });
       }
@@ -214,16 +222,17 @@ function CalendarPage() {
       setMoodByDate(moodObj);
       setJournalByDate(journalObj);
 
-      // Set today's entry for modal display state (if present)
+      // Set today's entry for modal display state (if present, use latest only for single mood/journal)
       const todayStr = `${yearStr}-${monthStr}-${String(today.date).padStart(2, "0")}`;
-      setMood(moodObj[todayStr] || null);
+      const todayMoods = moodObj[todayStr];
+      setMood(todayMoods && todayMoods.length > 0 ? todayMoods[todayMoods.length - 1] : null);
       setJournal(journalObj[todayStr] || "");
     }
 
     fetchUserData();
-    // Only rerun if month or year changes
+    // Extra: rerun when user logs in/out or month/year changes (so calendar refreshes automatically after /login navigation)
     // eslint-disable-next-line
-  }, [year, month]);
+  }, [year, month, localStorage.getItem("journalapp-username")]);
 
   function handleTodayClick() {
     setTempMood(mood);
@@ -301,7 +310,10 @@ function CalendarPage() {
     setModalOpen(false);
   }
 
-  // Helper for rendering each cell, now includes emoji display for each date
+  /**
+   * Updated helper: render every cell stacking all moods below the date as a responsive list.
+   * For each date, if tracked moods exist: list all moods below the date, vertically, responsive.
+   */
   function renderDayCell(dateNum, weekIdx, dayIdx) {
     if (!dateNum) {
       return (
@@ -317,8 +329,51 @@ function CalendarPage() {
 
     // Date string in API format
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dateNum).padStart(2, "0")}`;
-    const dayMood = moodByDate[dateStr];
+    const dayMoods = moodByDate[dateStr];
     const dayJournal = journalByDate[dateStr];
+
+    // Renders a vertical stack of all moods for this date, each as emoji + (label if device is wide enough)
+    const renderMoodStack = () => (
+      <div
+        className={styles.moodStack}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          rowGap: "2px",
+          marginTop: 2,
+        }}
+      >
+        {Array.isArray(dayMoods) && dayMoods.map((moodObj, idx) => (
+          <span
+            className={styles.moodEmoji}
+            key={moodObj.emoji + "-" + idx}
+            title={moodObj.label}
+            style={{
+              // Responsive: stack tightly, on small screens only emoji, on larger screens emoji+label
+              display: "flex",
+              alignItems: "center",
+              fontSize: "1.25rem",
+              lineHeight: 1,
+            }}
+          >
+            <span role="img" aria-label={moodObj.label}>{moodObj.emoji}</span>
+            <span
+              className={styles.moodLabel}
+              style={{
+                marginLeft: 4,
+                fontSize: "0.78em",
+                color: "#1DAA9A",
+                fontWeight: 500,
+                display: window.innerWidth > 500 ? "inline" : "none",
+              }}
+            >
+              {moodObj.label}
+            </span>
+          </span>
+        ))}
+      </div>
+    );
 
     if (isToday) {
       return (
@@ -326,44 +381,54 @@ function CalendarPage() {
           key={`today-${dateNum}`}
           className={`${styles.calendarCell} ${styles.todayCell} ${modalOpen ? styles.activeCell : ""}`}
           aria-current="date"
-          aria-label={`Today, ${MONTHS[month]} ${dateNum}${dayMood ? `. Mood selected: ${dayMood.label}` : ""}`}
+          aria-label={`Today, ${MONTHS[month]} ${dateNum}${
+            Array.isArray(dayMoods) && dayMoods.length > 0
+              ? `. Moods: ${dayMoods.map((m) => m.label).join(", ")}`
+              : ""
+          }`}
           tabIndex={0}
           type="button"
           onClick={handleTodayClick}
         >
           <span className={styles.dateNum}>{dateNum}</span>
-          {dayMood ? (
-            <span className={styles.moodEmoji} title={dayMood.label}>
-              {dayMood.emoji}
-            </span>
-          ) : null}
-          {dayJournal && !dayMood ? (
-            <span className={styles.dotEntry} title="Journal entry">
-              •
-            </span>
-          ) : null}
+          {/* Display all moods as a vertical stack below number */}
+          {(Array.isArray(dayMoods) && dayMoods.length > 0)
+            ? renderMoodStack()
+            : (dayJournal
+              ? (
+                  <span className={styles.dotEntry} title="Journal entry">
+                    •
+                  </span>
+                )
+              : null)
+          }
         </button>
       );
     }
-    // Other dates: show mood emoji or dot if mood/journal, not interactive
+    // Other dates: show mood history as vertical stack, or dot for journal entry
     return (
       <div
         key={`date-${dateNum}`}
         className={styles.calendarCell}
-        aria-label={`${MONTHS[month]} ${dateNum}${dayMood ? `. Mood: ${dayMood.label}` : ""}`}
+        aria-label={`${MONTHS[month]} ${dateNum}${
+          Array.isArray(dayMoods) && dayMoods.length > 0
+            ? `. Moods: ${dayMoods.map((m) => m.label).join(", ")}`
+            : ""
+        }`}
         aria-disabled="true"
       >
         <span className={styles.dateNumOther}>{dateNum}</span>
-        {/* Show emoji below number if mood recorded */}
-        {dayMood ? (
-          <span className={styles.moodEmoji} title={dayMood.label} style={{ display: "block" }}>
-            {dayMood.emoji}
-          </span>
-        ) : dayJournal ? (
-          <span className={styles.dotEntry} title="Journal entry">
-            •
-          </span>
-        ) : null}
+        {/* Show all moods as vertical stack */}
+        {(Array.isArray(dayMoods) && dayMoods.length > 0)
+          ? renderMoodStack()
+          : (dayJournal
+              ? (
+                  <span className={styles.dotEntry} title="Journal entry">
+                    •
+                  </span>
+                )
+              : null)
+        }
       </div>
     );
   }
