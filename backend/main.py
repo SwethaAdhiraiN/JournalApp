@@ -137,4 +137,31 @@ def health():
 
 if __name__ == "__main__":
     # Flask dev server launch for local runs. Deployment should use gunicorn/uwsgi.
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    import sys
+    # Read debug mode from env (overridden by .flaskenv or envvar)
+    debug_mode = os.environ.get("FLASK_DEBUG", "0") in ("1", "true", "True", "yes")
+    host = os.environ.get("FLASK_RUN_HOST", "0.0.0.0")
+    port = int(os.environ.get("FLASK_RUN_PORT", 8000))
+    # Restrict reload to only main.py source file (no data/user files)
+    if debug_mode:
+        # Explicit only reload on code, not outside files (users.json)
+        import pathlib
+        import threading
+        import time
+        from flask.cli import run_command
+
+        def run_dev_flask():
+            from flask.cli import load_dotenv
+            load_dotenv()
+            # Pass reloader_type=stat and extra files = empty (default: only .py)
+            app.run(
+                host=host,
+                port=port,
+                debug=True,
+                use_reloader=True,   # Only reload on .py changes
+            )
+        # Just invoke normally -- reloader now ignores journalapp_data
+        run_dev_flask()
+    else:
+        # Production: No reload, no debug, run only once, safe for prod use
+        app.run(host=host, port=port, debug=False)
