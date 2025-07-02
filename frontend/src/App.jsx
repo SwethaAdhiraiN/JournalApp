@@ -7,8 +7,18 @@ import CalendarPage from './components/Calendar/CalendarPage';
 import './global.css';
 
 /**
- * Helper: returns true if user is logged in.
- * Checks for username in localStorage.
+ * PUBLIC_INTERFACE
+ * isAuthenticated checks whether a user is currently logged in.
+ *
+ * Usage:
+ *   - This function is used to determine if the user session (authenticated state)
+ *     exists in the browser. It is typically called to gate access to protected routes.
+ *
+ * Returns:
+ *   - Boolean: true if the 'journalapp-username' key exists in localStorage (user is logged in),
+ *              false otherwise.
+ *
+ * Parameters: None
  */
 function isAuthenticated() {
   return Boolean(localStorage.getItem('journalapp-username'));
