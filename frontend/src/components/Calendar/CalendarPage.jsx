@@ -364,7 +364,7 @@ function CalendarPage() {
     const dayMoods = moodByDate[dateStr];
     const dayJournal = journalByDate[dateStr];
 
-    // Renders a vertical stack of all moods for this date, each as emoji + (label if device is wide enough)
+    // Only show emoji (no text) directly beneath the date in the grid cell
     const renderMoodStack = () => (
       <div
         className={styles.moodStack}
@@ -376,34 +376,24 @@ function CalendarPage() {
           marginTop: 2,
         }}
       >
-        {Array.isArray(dayMoods) && dayMoods.map((moodObj, idx) => (
-          <span
-            className={styles.moodEmoji}
-            key={moodObj.emoji + "-" + idx}
-            title={moodObj.label}
-            style={{
-              // Responsive: stack tightly, on small screens only emoji, on larger screens emoji+label
-              display: "flex",
-              alignItems: "center",
-              fontSize: "1.25rem",
-              lineHeight: 1,
-            }}
-          >
-            <span role="img" aria-label={moodObj.label}>{moodObj.emoji}</span>
+        {Array.isArray(dayMoods) &&
+          dayMoods.map((moodObj, idx) => (
             <span
-              className={styles.moodLabel}
+              className={styles.moodEmoji}
+              key={moodObj.emoji + "-" + idx}
+              title={moodObj.label}
               style={{
-                marginLeft: 4,
-                fontSize: "0.78em",
-                color: "#1DAA9A",
-                fontWeight: 500,
-                display: window.innerWidth > 500 ? "inline" : "none",
+                display: "flex",
+                alignItems: "center",
+                fontSize: "1.25rem",
+                lineHeight: 1,
               }}
             >
-              {moodObj.label}
+              <span role="img" aria-label={moodObj.label}>
+                {moodObj.emoji}
+              </span>
             </span>
-          </span>
-        ))}
+          ))}
       </div>
     );
 
@@ -424,16 +414,9 @@ function CalendarPage() {
       >
         <span className={isToday ? styles.dateNum : styles.dateNumOther}>{dateNum}</span>
         {/* Display all moods as a vertical stack below number */}
-        {(Array.isArray(dayMoods) && dayMoods.length > 0)
+        {Array.isArray(dayMoods) && dayMoods.length > 0
           ? renderMoodStack()
-          : (dayJournal
-            ? (
-                <span className={styles.dotEntry} title="Journal entry">
-                  •
-                </span>
-              )
-            : null)
-        }
+          : null}
       </button>
     );
   }
