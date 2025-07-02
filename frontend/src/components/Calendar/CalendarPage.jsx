@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./CalendarPage.module.css";
+import { API_BASE_URL } from "../../config";
 
 // Moods and emoji used for mood selection
 const MOOD_EMOJIS = [
@@ -12,6 +13,14 @@ const MOOD_EMOJIS = [
   { label: "Excited", emoji: "🤩" },
   { label: "Tired", emoji: "🥱" },
 ];
+
+/**
+ * Lookup map: {label: emoji, ...}
+ * For faster lookups from mood label -> emoji
+ */
+const MOOD_LABEL_TO_EMOJI = Object.fromEntries(
+  MOOD_EMOJIS.map((m) => [m.label, m.emoji])
+);
 
 function getToday() {
   const now = new Date();
@@ -66,7 +75,11 @@ const MONTHS = [
  * Design per assets/calendar_design_notes.md. Uses provided palette.
  * Now includes Logout button and session clearing.
  */
-// PUBLIC_INTERFACE
+/**
+ * PUBLIC_INTERFACE
+ * CalendarPage: JournalApp calendar that after login fetches user's mood and journal entries for current month,
+ * and displays the relevant emoji per date on the calendar grid.
+ */
 function CalendarPage() {
   const today = getToday();
   const year = today.year;
@@ -74,13 +87,118 @@ function CalendarPage() {
   const monthLabel = MONTHS[month] + " " + year;
   const calendarWeeks = getMonthDays(year, month);
 
-  const [mood, setMood] = useState(null); // {label,emoji}
-  const [journal, setJournal] = useState("");
+  const [mood, setMood] = useState(null); // {label,emoji} for today (for modal/display)
+  const [journal, setJournal] = useState(""); // journal for today
   const [modalOpen, setModalOpen] = useState(false);
   const [tempMood, setTempMood] = useState(null);
   const [tempJournal, setTempJournal] = useState("");
 
+  // New: Store all user's mood entries and journal entries for this month
+  // moodByDate: { '2024-07-01': {label, emoji}, ... }
+  // journalByDate: { '2024-07-01': "text...", ... }
+  const [moodByDate, setMoodByDate] = useState({});
+  const [journalByDate, setJournalByDate] = useState({});
+
   const navigate = useNavigate();
+
+  // Fetch all mood and journal entries for user, month
+  useEffect(() => {
+    /** On mount: fetch mood.json and journal.json entries for the user and set state for this month */
+    async function fetchData() {
+      const username = localStorage.getItem("journalapp-username");
+      if (!username) return;
+
+      // Helper: fetch JSON file from backend, return {} or parsed object
+      async function fetchUserFile(apiPath) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/${apiPath}`);
+          if (!res.ok) return {};
+          const data = await res.json();
+          return typeof data === "object" && data !== null ? data : {};
+        } catch {
+          return {};
+        }
+      }
+
+      // --- Fetch mood.json (GET /mood.json or static file)
+      // The backend stores moods as { username: { date: [mood1, mood2, ...], ... }, ... }
+      let moods = {};
+      try {
+        const res = await fetch(`${API_BASE_URL}/../database/mood.json`); // direct DB file
+        if (res.ok) {
+          moods = await res.json();
+        }
+      } catch {
+        moods = {};
+      }
+      // --- Fetch journal.json
+      let journals = {};
+      try {
+        const res2 = await fetch(`${API_BASE_URL}/../database/journal.json`);
+        if (res2.ok) {
+          journals = await res2.json();
+        }
+      } catch {
+        journals = {};
+      }
+
+      // moods[username]: { 'YYYY-MM-DD': [mood1, ...], ... }
+      // journals[username]: { 'YYYY-MM-DD': [text, ...], ... }
+      const moodObj = {};
+      const journalObj = {};
+      const yearStr = String(year);
+      const monthStr = String(month + 1).padStart(2, "0");
+
+      // Helper to build all dates in this calendar month grid (YYYY-MM-DD)
+      function getAllDatesOfMonthGrid(year, month, weeks) {
+        const days = [];
+        for (const wk of weeks) {
+          for (const d of wk) {
+            if (d) {
+              const ds = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+              days.push(ds);
+            }
+          }
+        }
+        return days;
+      }
+      const calendarDates = getAllDatesOfMonthGrid(year, month, calendarWeeks);
+
+      // Last mood for date (handle multiple)
+      if (moods[username]) {
+        Object.entries(moods[username]).forEach(([date, moodArr]) => {
+          if (calendarDates.includes(date) && Array.isArray(moodArr) && moodArr.length > 0) {
+            // Last mood of that day (could show all, but use last as "active")
+            // If label is unknown, display as text
+            const label = moodArr[moodArr.length - 1];
+            moodObj[date] = {
+              label,
+              emoji: MOOD_LABEL_TO_EMOJI[label] || "❓",
+            };
+          }
+        });
+      }
+      if (journals[username]) {
+        Object.entries(journals[username]).forEach(([date, journalArr]) => {
+          if (calendarDates.includes(date) && Array.isArray(journalArr) && journalArr.length > 0) {
+            // Use last entry for display
+            journalObj[date] = journalArr[journalArr.length - 1];
+          }
+        });
+      }
+
+      setMoodByDate(moodObj);
+      setJournalByDate(journalObj);
+
+      // For today: set display mood/journal (special case for the modal)
+      const todayStr = `${yearStr}-${monthStr}-${String(today.date).padStart(2, "0")}`;
+      setMood(moodObj[todayStr] || null);
+      setJournal(journalObj[todayStr] || "");
+    }
+    fetchData();
+    // Only run on mount and when year/month changes (for single-month, this is ok)
+    // eslint-disable-next-line
+  }, [year, month]);
 
   function handleTodayClick() {
     setTempMood(mood);
@@ -96,8 +214,6 @@ function CalendarPage() {
   function handleLogout() {
     /** Clear login state and redirect to Home ('/'). */
     localStorage.removeItem("journalapp-username");
-    // Optionally clear all journal/mood state as well if stored
-    // localStorage.clear();
     navigate("/", { replace: true });
   }
 
@@ -109,17 +225,15 @@ function CalendarPage() {
     }
 
     const username = localStorage.getItem("journalapp-username") || "demo-user";
-    const year = today.year;
-    const month = today.month + 1; // month is 0-indexed
+    const yearStr = String(today.year);
+    const monthStr = String(today.month + 1).padStart(2, "0");
     const day = today.date;
-    const dateStr = `${year}-${month.toString().padStart(2, "0")}-${day
-      .toString()
-      .padStart(2, "0")}`;
+    const dateStr = `${yearStr}-${monthStr}-${String(day).padStart(2, "0")}`;
 
     // Helper to POST to backend
     async function postToBackend(path, body) {
       try {
-        const res = await fetch(`http://localhost:8000${path}`, {
+        const res = await fetch(`${API_BASE_URL}${path}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -138,6 +252,10 @@ function CalendarPage() {
         mood: tempMood.label,
       });
       setMood(tempMood);
+      setMoodByDate((prev) => ({
+        ...prev,
+        [dateStr]: tempMood,
+      }));
     }
     // Persist journal if changed
     if (tempJournal.trim() && tempJournal.trim() !== journal) {
@@ -147,10 +265,15 @@ function CalendarPage() {
         journal: tempJournal.trim(),
       });
       setJournal(tempJournal.trim());
+      setJournalByDate((prev) => ({
+        ...prev,
+        [dateStr]: tempJournal.trim(),
+      }));
     }
     setModalOpen(false);
   }
 
+  // Helper for rendering each cell, now includes emoji display for each date
   function renderDayCell(dateNum, weekIdx, dayIdx) {
     if (!dateNum) {
       return (
@@ -164,28 +287,29 @@ function CalendarPage() {
     const isToday =
       dateNum === today.date && month === today.month && year === today.year;
 
+    // Date string in API format
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dateNum).padStart(2, "0")}`;
+    const dayMood = moodByDate[dateStr];
+    const dayJournal = journalByDate[dateStr];
+
     if (isToday) {
       return (
         <button
           key={`today-${dateNum}`}
-          className={`${styles.calendarCell} ${styles.todayCell} ${
-            modalOpen ? styles.activeCell : ""
-          }`}
+          className={`${styles.calendarCell} ${styles.todayCell} ${modalOpen ? styles.activeCell : ""}`}
           aria-current="date"
-          aria-label={`Today, ${MONTHS[month]} ${dateNum}${
-            mood ? `. Mood selected: ${mood.label}` : ""
-          }`}
+          aria-label={`Today, ${MONTHS[month]} ${dateNum}${dayMood ? `. Mood selected: ${dayMood.label}` : ""}`}
           tabIndex={0}
           type="button"
           onClick={handleTodayClick}
         >
           <span className={styles.dateNum}>{dateNum}</span>
-          {mood ? (
-            <span className={styles.moodEmoji} title={mood.label}>
-              {mood.emoji}
+          {dayMood ? (
+            <span className={styles.moodEmoji} title={dayMood.label}>
+              {dayMood.emoji}
             </span>
           ) : null}
-          {journal && !mood ? (
+          {dayJournal && !dayMood ? (
             <span className={styles.dotEntry} title="Journal entry">
               •
             </span>
@@ -193,15 +317,25 @@ function CalendarPage() {
         </button>
       );
     }
-    // Other dates: not interactive
+    // Other dates: show mood emoji or dot if mood/journal, not interactive
     return (
       <div
         key={`date-${dateNum}`}
         className={styles.calendarCell}
-        aria-label={`${MONTHS[month]} ${dateNum}`}
+        aria-label={`${MONTHS[month]} ${dateNum}${dayMood ? `. Mood: ${dayMood.label}` : ""}`}
         aria-disabled="true"
       >
         <span className={styles.dateNumOther}>{dateNum}</span>
+        {/* Show emoji below number if mood recorded */}
+        {dayMood ? (
+          <span className={styles.moodEmoji} title={dayMood.label} style={{ display: "block" }}>
+            {dayMood.emoji}
+          </span>
+        ) : dayJournal ? (
+          <span className={styles.dotEntry} title="Journal entry">
+            •
+          </span>
+        ) : null}
       </div>
     );
   }
