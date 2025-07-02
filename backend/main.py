@@ -12,6 +12,8 @@ CORS(app, supports_credentials=True)
 BASE_PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 USERS_DB_DIR = os.path.join(BASE_PROJECT_DIR, "JournalApp", "database")
 USERS_DB_FILE = os.path.join(USERS_DB_DIR, "users.json")
+MOOD_DB_FILE = os.path.join(USERS_DB_DIR, "mood.json")
+JOURNAL_DB_FILE = os.path.join(USERS_DB_DIR, "journal.json")
 
 # Ensure database dir exists
 os.makedirs(USERS_DB_DIR, exist_ok=True)
@@ -42,7 +44,136 @@ def hash_password(pw):
     """Hashes the password using SHA-256."""
     return hashlib.sha256(pw.encode("utf-8")).hexdigest()
 
+def load_json_dict(filepath):
+    """Load a dictionary from JSON file, or return {} if nonexistent/corrupt."""
+    try:
+        if not os.path.exists(filepath):
+            return {}
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def save_json_dict(filepath, data):
+    """Atomically write dict data to JSON; use a .tmp file and replace."""
+    tmpfile = filepath + ".tmp"
+    with open(tmpfile, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    os.replace(tmpfile, filepath)
+
 # ---- API Route Definitions ----
+
+# PUBLIC_INTERFACE
+@app.route("/submit-mood", methods=["POST"])
+def submit_mood():
+    """
+    Add or append a mood entry for a user and date.
+
+    POST JSON: { "username": str, "date": str, "mood": str }
+
+    - Stores in JournalApp/database/mood.json as:
+      { "username": { "date": [mood, ...], ... }, ... }
+      Appends new mood to any existing moods for same date/user.
+    - Creates file/entries if not present.
+    - Returns: { "message": "...", "moods": [str, ...], "username": ..., "date": ... }
+    - Error cases: { "detail": "..." }, status 400/409/500
+
+    Frontend CORS supported.
+    """
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify(detail="No JSON body sent."), 400
+
+    username = (data.get("username") or "").strip()
+    date = (data.get("date") or "").strip()
+    mood = (data.get("mood") or "").strip()
+
+    if not username or len(username) < 3 or len(username) > 32:
+        return jsonify(detail="Username must be 3-32 characters."), 400
+    if not date:
+        return jsonify(detail="Missing required field: date."), 400
+    if not mood or len(mood) > 24:
+        return jsonify(detail="Mood must be non-empty and less than 24 characters."), 400
+
+    mood_data = load_json_dict(MOOD_DB_FILE)
+
+    # Ensure user exists as a dict, and date exists as a list
+    if username not in mood_data:
+        mood_data[username] = {}
+    user_moods = mood_data[username]
+
+    if date not in user_moods:
+        user_moods[date] = []
+    # Append if not already present for the same date. Allow multiple moods per day.
+    user_moods[date].append(mood)
+
+    try:
+        save_json_dict(MOOD_DB_FILE, mood_data)
+    except Exception:
+        return jsonify(detail="Could not save mood data."), 500
+
+    return jsonify(
+        message="Mood entry saved.",
+        moods=user_moods[date],
+        username=username,
+        date=date
+    ), 200
+
+# PUBLIC_INTERFACE
+@app.route("/submit-journal", methods=["POST"])
+def submit_journal():
+    """
+    Add or append a journal entry for a user and date.
+
+    POST JSON: { "username": str, "date": str, "journal": str }
+
+    - Stores in JournalApp/database/journal.json as:
+      { "username": { "date": [journal, ...], ... }, ... }
+      Appends the new journal entry for the given date/user.
+    - Creates file/entries if not present.
+    - Returns: { "message": "...", "journals": [str, ...], "username": ..., "date": ... }
+    - Error cases: { "detail": "..." }, status 400/409/500
+
+    Frontend CORS supported.
+    """
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify(detail="No JSON body sent."), 400
+
+    username = (data.get("username") or "").strip()
+    date = (data.get("date") or "").strip()
+    journal = (data.get("journal") or "").strip()
+
+    if not username or len(username) < 3 or len(username) > 32:
+        return jsonify(detail="Username must be 3-32 characters."), 400
+    if not date:
+        return jsonify(detail="Missing required field: date."), 400
+    if not journal or len(journal) > 10000:
+        return jsonify(detail="Journal entry must be non-empty (max 10,000 characters)."), 400
+
+    journal_data = load_json_dict(JOURNAL_DB_FILE)
+
+    if username not in journal_data:
+        journal_data[username] = {}
+    user_entries = journal_data[username]
+
+    if date not in user_entries:
+        user_entries[date] = []
+    # Always append, no dedupe
+    user_entries[date].append(journal)
+
+    try:
+        save_json_dict(JOURNAL_DB_FILE, journal_data)
+    except Exception:
+        return jsonify(detail="Could not save journal data."), 500
+
+    return jsonify(
+        message="Journal entry saved.",
+        journals=user_entries[date],
+        username=username,
+        date=date
+    ), 200
 
 # PUBLIC_INTERFACE
 @app.route("/signup", methods=["POST"])
