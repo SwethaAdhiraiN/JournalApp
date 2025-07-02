@@ -1,0 +1,380 @@
+:root {
+  --calendar-bg: #B2FFF2;
+  --calendar-header-bg: #18D7B8;
+  --calendar-header-text: #ffffff;
+  --calendar-cell-text: #27C8B6;
+  --calendar-cell-bg: transparent;
+  --calendar-today-bg: #92F1E7;
+  --calendar-border: #B2FFF2;
+  --calendar-header-shadow: 0px 8px 28px 0 rgba(20, 200, 183, 0.09);
+  --calendar-disabled: #C8E7E7;
+  --modal-overlay-bg: rgba(20, 40, 40, 0.45);
+  --modal-bg: #fff;
+  --modal-radius: 12px;
+  --modal-accent: #27C8B6;
+  --button-radius: 22px;
+  --button-primary: #27C8B6;
+  --button-primary-text: #fff;
+  --button-secondary: #56DFCF;
+  --button-secondary-text: #184138;
+  --font-family: 'Helvetica Neue', Arial, sans-serif;
+  --mood-label: #1DAA9A;
+  --journal-label: #56DFCF;
+}
+
+/* Main */
+.calendarRoot {
+  min-height: 100vh;
+  width: 100vw;
+  background: var(--calendar-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family);
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.calendarContainer {
+  width: 100vw;
+  max-width: 580px;
+  margin: 0 auto;
+  background: var(--calendar-bg);
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-shadow: 0 1px 9px 0 rgba(80,180,170,0.07);
+  padding: 0 0 32px 0;
+  position: relative;
+}
+
+.calendarHeader {
+  width: 100%;
+  min-height: 74px;
+  background: var(--calendar-header-bg);
+  color: var(--calendar-header-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  box-shadow: var(--calendar-header-shadow);
+  font-family: var(--font-family);
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-align: center;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.monthLabel {
+  width: 100%;
+  text-align: center;
+  font-size: 2.15rem;
+  font-weight: 700;
+  color: var(--calendar-header-text);
+  letter-spacing: 0.03em;
+}
+
+.daysRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  background: var(--calendar-header-bg);
+  padding: 0 0 0 0;
+  border-bottom: none;
+  min-height: 47px;
+}
+
+.dayLabel {
+  color: var(--calendar-header-text);
+  text-align: center;
+  font-size: 1rem;
+  font-family: var(--font-family);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 13px 0 10px 0;
+  border-radius: 0;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 48px;
+  gap: 8px;
+  width: 100%;
+  margin-top: 0;
+  padding: 12px 0 0 0;
+  background: var(--calendar-bg);
+}
+
+.calendarCell {
+  background: var(--calendar-cell-bg);
+  color: var(--calendar-cell-text);
+  font-size: 1.15rem;
+  font-weight: 500;
+  border: 2px solid var(--calendar-border);
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: box-shadow 0.15s, background 0.16s, color 0.16s;
+  min-width: 48px;
+  min-height: 48px;
+  z-index: 1;
+  position: relative;
+  cursor: default;
+  user-select: none;
+}
+
+.dateNum,
+.dateNumOther {
+  font-family: var(--font-family);
+  font-size: 1.09rem;
+  font-weight: 500;
+}
+
+.dateNumOther {
+  color: var(--calendar-cell-text);
+  opacity: 0.7;
+}
+
+.todayCell {
+  background: var(--calendar-today-bg);
+  color: #184138;
+  font-weight: 700;
+  border: 2.5px solid var(--button-primary);
+  cursor: pointer;
+  position: relative;
+  outline: none;
+  z-index: 2;
+  transition: background 0.11s, box-shadow 0.11s;
+}
+.todayCell:focus,
+.todayCell:hover {
+  background: #69ECD6;
+  box-shadow: 0px 5px 30px 0 rgba(80, 180, 170, 0.11);
+}
+
+.activeCell {
+  box-shadow: 0 0 0 3px #1DAA9A;
+}
+
+.moodEmoji {
+  font-size: 1.45rem;
+  margin-left: 0.3em;
+  margin-top: 2px;
+  display: inline-block;
+}
+
+.dotEntry {
+  display: inline-block;
+  font-size: 2rem;
+  color: #1DAA9A;
+  line-height: 1;
+  margin-top: 2px;
+  margin-left: 3px;
+  font-weight: 600;
+}
+
+.moodDisplay {
+  width: 100%;
+  text-align: center;
+  margin-top: 29px;
+  min-height: 34px;
+}
+.moodLabel {
+  margin-left: 0.5em;
+  color: var(--mood-label);
+  font-weight: 600;
+  font-size: 1.11rem;
+  vertical-align: middle;
+}
+
+.journalEntryDisplay {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.55em;
+  margin-top: 7px;
+  font-size: 1rem;
+  color: var(--journal-label);
+  font-weight: 500;
+}
+.journalIcon {
+  font-size: 1.13rem;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--modal-overlay-bg);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.16s;
+}
+
+@keyframes fadeIn {
+  0% {opacity:0;}
+  100% {opacity:1;}
+}
+
+.modal {
+  background: var(--modal-bg);
+  border-radius: var(--modal-radius);
+  box-shadow: 0 4px 44px 0 rgba(20, 80, 80, 0.15);
+  padding: 28px 22px 22px 22px;
+  min-width: 320px;
+  max-width: 94vw;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 101;
+}
+
+.modalTitle {
+  font-size: 1.32rem;
+  font-family: var(--font-family);
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #1DAA9A;
+}
+
+.emojiGrid {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px 12px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.emojiButton {
+  background: #E6FAF8;
+  border-radius: 10px;
+  border: 2.2px solid transparent;
+  font-size: 2.2rem;
+  cursor: pointer;
+  transition: border 0.13s, background 0.11s;
+  padding: 6px 13px;
+  box-shadow: 0 1px 10px 0 rgba(50,150,133,0.07);
+  outline: none;
+}
+.emojiButton:hover,
+.emojiButton:focus {
+  border: 2.2px solid var(--button-primary);
+  background: #b7fadf;
+}
+.emojiSelected {
+  background: #27C8B6;
+  color: #fff;
+  border: 2.2px solid #1DAA9A;
+}
+
+.journalInput {
+  width: 100%;
+  font-size: 1.06rem;
+  border-radius: 9px;
+  border: 1.5px solid #C8E7E7;
+  margin-top: 0.5em;
+  margin-bottom: 1.14em;
+  padding: 10px 13px;
+  min-height: 44px;
+  background: #fafefe;
+  box-sizing: border-box;
+  font-family: var(--font-family);
+  color: #184138;
+  resize: vertical;
+  outline: none;
+  transition: border 0.12s;
+}
+.journalInput:focus {
+  border: 1.5px solid var(--button-primary);
+}
+
+.modalActions {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  gap: 11px;
+}
+.saveButton,
+.cancelButton {
+  padding: 8px 26px;
+  border-radius: var(--button-radius);
+  font-size: 1rem;
+  font-family: var(--font-family);
+  font-weight: 600;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s;
+}
+.saveButton {
+  background: var(--button-primary);
+  color: var(--button-primary-text);
+  box-shadow: 0px 3px 12px 0 rgba(60,194,168,.18);
+}
+.saveButton:disabled {
+  background: #8ad7cd;
+  cursor: not-allowed;
+  color: #fff;
+}
+.cancelButton {
+  background: var(--button-secondary);
+  color: var(--button-secondary-text);
+  border: none;
+}
+.cancelButton:hover,
+.cancelButton:focus {
+  background: #adeed9;
+}
+
+@media (max-width: 600px) {
+  .calendarContainer {
+    max-width: 100vw;
+    min-width: 0;
+    padding-bottom: 10vw !important;
+  }
+  .calendarHeader {
+    font-size: 1.17rem;
+    min-height: 48px;
+    padding: 0 8px;
+  }
+  .monthLabel {
+    font-size: 1.08rem;
+  }
+  .calendarGrid {
+    grid-auto-rows: 36px;
+    gap: 5px;
+    padding-top: 6px;
+  }
+  .calendarCell,
+  .todayCell {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+  }
+  .moodDisplay {
+    font-size: 0.98rem;
+  }
+  .modal {
+    min-width: 96vw;
+    padding: 16px 0.5em 10px 0.5em;
+  }
+  .emojiButton {
+    font-size: 1.45rem;
+    padding: 4.5px 7px;
+  }
+}
