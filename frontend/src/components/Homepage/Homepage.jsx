@@ -3,9 +3,10 @@ import styles from './Homepage.module.css';
 
 // PUBLIC_INTERFACE
 function Homepage() {
-  /** Homepage for Journal App, pixel-perfect as per provided design notes and image. */
+  /** Homepage for Journal App. Pixel-perfect as per 'assets/homepage_design_notes.md'. */
   return (
     <div className={styles.homeRoot}>
+      {/* Decorative Layered Backgrounds */}
       <div className={styles.topBg} />
       <div className={styles.arcBg} />
       <div className={styles.bottomBg} />

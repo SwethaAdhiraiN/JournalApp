@@ -1,6 +1,6 @@
 /* Homepage.module.css
- * Implementation: pixel-perfect redesign matching assets/homepage_design_notes.md.
- * All color/variable values are matched exactly to homepage_color_palette.md.
+ * PIXEL-PERFECT implementation per assets/homepage_design_notes.md.
+ * All color/variables use homepage_color_palette.md.
  */
 
 .homeRoot {
@@ -13,7 +13,7 @@
 }
 
 .topBg {
-  /* solid teal top background */
+  /* Top half solid teal background */
   position: absolute;
   top: 0; left: 0;
   width: 100vw;
@@ -24,19 +24,19 @@
 }
 
 .arcBg {
-  /* soft lighter teal arc overlay */
+  /* Large lighter teal arc overlay, elliptical and very soft */
   position: absolute;
   width: 140vw;
-  height: 88vh;
+  height: 90vh;
   left: -20vw;
-  top: -26vh;
+  top: -27vh;
   z-index: 1;
   pointer-events: none;
-  background: radial-gradient(ellipse 85% 65% at 50% 15%, var(--hero-curve-bg) 70%, transparent 100%);
+  background: radial-gradient(ellipse 80% 65% at 50% 20%, var(--hero-curve-bg) 72%, transparent 100%);
 }
 
 .bottomBg {
-  /* Lower pink arc, bottom overlay */
+  /* Lower pale blush/pink arc, like a curved hill at the bottom */
   position: absolute;
   width: 120vw;
   height: 38vh;
@@ -45,31 +45,31 @@
   z-index: 2;
   pointer-events: none;
   background: var(--bottom-blush-bg);
-  border-top-left-radius: 80vw 21vh;
-  border-top-right-radius: 80vw 21vh;
+  border-top-left-radius: 80vw 22vh;
+  border-top-right-radius: 80vw 22vh;
   box-shadow: 0 -2px 20px 0 rgba(20,200,183,0.02);
 }
 
-/* Main vertical layout centering */
+/* Main content: vertical/horizontal center */
 .mainContent {
   position: relative;
+  min-height: 100vh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  width: 100vw;
   z-index: 3;
   padding: 0 2rem;
   text-align: center;
 }
 
-/* Typography and spacing */
+/* Typography + spacing */
 .welcome {
   font-family: var(--font-family);
   font-weight: 400;
   font-size: 1.14rem; /* ~18px */
-  color: #184138; /* --text-main */
+  color: var(--text-main);
   margin-bottom: 12px;
   letter-spacing: 0.01em;
 }
@@ -78,7 +78,7 @@
   font-family: var(--font-family);
   font-size: 2.5rem; /* ~40px */
   font-weight: 700;
-  color: #184138; /* --text-main */
+  color: var(--text-main);
   margin-bottom: 12px;
   line-height: 1.14;
   letter-spacing: 0.01em;
@@ -88,12 +88,13 @@
   font-family: var(--font-family);
   font-size: 1.25rem; /* ~20px */
   font-weight: 400;
-  color: #319C91; /* lighter teal subtext */
+  color: var(--subtext);
   margin-bottom: 32px;
   line-height: 1.3;
   letter-spacing: 0.01em;
 }
 
+/* Action buttons: flex horizontal by default */
 .buttonRow {
   display: flex;
   flex-direction: row;
@@ -115,33 +116,33 @@
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 12px 0 rgba(23, 87, 83, 0.06); /* subtle shadow */
+  box-shadow: 0 2px 12px 0 rgba(23, 87, 83, 0.06);
   transition: background 0.18s, color 0.18s;
   outline: none;
 }
 
 .loginButton {
-  background: #265248; /* --button-primary-bg */
-  color: #fff;         /* --button-primary-text */
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
 }
 
 .loginButton:hover,
 .loginButton:focus {
-  background: #1b3a33; /* slightly darker teal for hover/active */
+  background: #1b3a33;
 }
 
 .signupButton {
-  background: #eafcf5; /* --button-secondary-bg */
-  color: #265248;      /* --button-secondary-text */
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
 }
 
 .signupButton:hover,
 .signupButton:focus {
   background: #d3f2e8;
-  color: #265248;
+  color: var(--button-secondary-text);
 }
 
-/* RESPONSIVE: Stack content and buttons when <500px */
+/* RESPONSIVE: Stack everything and buttons below 500px */
 @media (max-width: 500px) {
   .mainContent {
     padding: 0 0.5rem;
