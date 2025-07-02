@@ -1,0 +1,30 @@
+:root {
+  --primary-bg: #19C8B8;
+  --secondary-bg: #80E0D0;
+  --accent: #295B57;
+  --button-bg: #F6F8ED;
+  --heading-text: #294742;
+  --subheading-text: #425C53;
+  --canvas-bg: #FFF2EC;
+  --border-radius: 12px;
+  --font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-family);
+  background: var(--canvas-bg);
+  min-height: 100vh;
+  width: 100vw;
+  letter-spacing: 0.01em;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
