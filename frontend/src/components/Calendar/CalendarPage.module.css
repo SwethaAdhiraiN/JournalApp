@@ -69,6 +69,34 @@
   z-index: 1;
 }
 
+/* Logout button, absolute/floating top right over header bar */
+.logoutButton {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  background: #ffffff22;
+  color: var(--calendar-header-text);
+  border: none;
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 17px;
+  padding: 8px 22px;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 11px 0 rgba(23, 87, 83, 0.09);
+  transition: background 0.13s, color 0.13s;
+  outline: none;
+  letter-spacing: 0.01em;
+}
+
+.logoutButton:hover,
+.logoutButton:focus {
+  background: #ffffff55;
+  color: #144a4a;
+}
+
+
 .monthLabel {
   width: 100%;
   text-align: center;
