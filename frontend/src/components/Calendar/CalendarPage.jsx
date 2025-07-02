@@ -109,9 +109,11 @@ function CalendarPage() {
   const monthLabel = MONTHS[month] + " " + year;
   const calendarWeeks = getMonthDays(year, month);
 
-  const [mood, setMood] = useState(null); // {label,emoji} for today (for modal/display)
-  const [journal, setJournal] = useState(""); // journal for today
+  // These are for generic "selected" date, not just today
+  const [mood, setMood] = useState(null);
+  const [journal, setJournal] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null); // { year, month, date }
   const [tempMood, setTempMood] = useState(null);
   const [tempJournal, setTempJournal] = useState("");
 
@@ -234,14 +236,33 @@ function CalendarPage() {
     // eslint-disable-next-line
   }, [year, month, localStorage.getItem("journalapp-username")]);
 
-  function handleTodayClick() {
-    setTempMood(mood);
-    setTempJournal(journal);
+  // Handles clicking ANY calendar day cell
+  function handleDateClick(dateNum) {
+    const selYear = year;
+    const selMonth = month;
+    const selDay = dateNum;
+    setSelectedDate({ year: selYear, month: selMonth, date: selDay });
+
+    // Build YYYY-MM-DD string for lookup
+    const yearStr = String(selYear);
+    const monthStr = String(selMonth + 1).padStart(2, "0");
+    const dayStr = String(selDay).padStart(2, "0");
+    const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+
+    // For that date, populate state for mood & journal in modal
+    const entryMoods = moodByDate[dateStr];
+    const entryJournal = journalByDate[dateStr] || "";
+
+    setTempMood(Array.isArray(entryMoods) && entryMoods.length > 0 ? entryMoods[entryMoods.length - 1] : null);
+    setTempJournal(entryJournal);
     setModalOpen(true);
   }
 
   function closeModal() {
     setModalOpen(false);
+    setSelectedDate(null);
+    setTempMood(null);
+    setTempJournal("");
   }
 
   // PUBLIC_INTERFACE
@@ -257,16 +278,20 @@ function CalendarPage() {
    * If empty, do nothing.
    */
   async function handleSave() {
+    if (!selectedDate) {
+      setModalOpen(false);
+      return;
+    }
     if (!tempMood && tempJournal.trim() === "") {
       setModalOpen(false);
       return;
     }
 
     const username = localStorage.getItem("journalapp-username") || "demo-user";
-    const yearStr = String(today.year);
-    const monthStr = String(today.month + 1).padStart(2, "0");
-    const day = today.date;
-    const dateStr = `${yearStr}-${monthStr}-${String(day).padStart(2, "0")}`;
+    const yearStr = String(selectedDate.year);
+    const monthStr = String(selectedDate.month + 1).padStart(2, "0");
+    const dayStr = String(selectedDate.date).padStart(2, "0");
+    const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
 
     // Generic POST function for mood/journal submission
     async function postToBackend(path, body) {
@@ -282,18 +307,18 @@ function CalendarPage() {
       }
     }
 
-    // Always POST mood and/or journal for today. This will overwrite any previous entry for the date (per backend).
+    let saved = false;
     if (tempMood) {
       await postToBackend("/submit-mood", {
         username,
         date: dateStr,
         mood: tempMood.label,
       });
-      setMood(tempMood);
       setMoodByDate((prev) => ({
         ...prev,
-        [dateStr]: tempMood,
+        [dateStr]: [{ label: tempMood.label, emoji: tempMood.emoji }],
       }));
+      saved = true;
     }
     if (tempJournal.trim()) {
       await postToBackend("/submit-journal", {
@@ -301,13 +326,20 @@ function CalendarPage() {
         date: dateStr,
         journal: tempJournal.trim(),
       });
-      setJournal(tempJournal.trim());
       setJournalByDate((prev) => ({
         ...prev,
         [dateStr]: tempJournal.trim(),
       }));
+      saved = true;
+    }
+    if (saved) {
+      setMood(tempMood);
+      setJournal(tempJournal.trim());
     }
     setModalOpen(false);
+    setSelectedDate(null);
+    setTempMood(null);
+    setTempJournal("");
   }
 
   /**
@@ -327,7 +359,7 @@ function CalendarPage() {
     const isToday =
       dateNum === today.date && month === today.month && year === today.year;
 
-    // Date string in API format
+    // Date string for lookup
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dateNum).padStart(2, "0")}`;
     const dayMoods = moodByDate[dateStr];
     const dayJournal = journalByDate[dateStr];
@@ -375,61 +407,34 @@ function CalendarPage() {
       </div>
     );
 
-    if (isToday) {
-      return (
-        <button
-          key={`today-${dateNum}`}
-          className={`${styles.calendarCell} ${styles.todayCell} ${modalOpen ? styles.activeCell : ""}`}
-          aria-current="date"
-          aria-label={`Today, ${MONTHS[month]} ${dateNum}${
-            Array.isArray(dayMoods) && dayMoods.length > 0
-              ? `. Moods: ${dayMoods.map((m) => m.label).join(", ")}`
-              : ""
-          }`}
-          tabIndex={0}
-          type="button"
-          onClick={handleTodayClick}
-        >
-          <span className={styles.dateNum}>{dateNum}</span>
-          {/* Display all moods as a vertical stack below number */}
-          {(Array.isArray(dayMoods) && dayMoods.length > 0)
-            ? renderMoodStack()
-            : (dayJournal
-              ? (
-                  <span className={styles.dotEntry} title="Journal entry">
-                    •
-                  </span>
-                )
-              : null)
-          }
-        </button>
-      );
-    }
-    // Other dates: show mood history as vertical stack, or dot for journal entry
+    // All days, including today, should open modal on click.
     return (
-      <div
-        key={`date-${dateNum}`}
-        className={styles.calendarCell}
-        aria-label={`${MONTHS[month]} ${dateNum}${
+      <button
+        key={`datebtn-${dateNum}`}
+        className={`${styles.calendarCell} ${isToday ? styles.todayCell : ""} ${modalOpen && selectedDate && selectedDate.date === dateNum ? styles.activeCell : ""}`}
+        aria-current={isToday ? "date" : undefined}
+        aria-label={`${isToday ? "Today, " : ""}${MONTHS[month]} ${dateNum}${
           Array.isArray(dayMoods) && dayMoods.length > 0
             ? `. Moods: ${dayMoods.map((m) => m.label).join(", ")}`
             : ""
         }`}
-        aria-disabled="true"
+        tabIndex={0}
+        type="button"
+        onClick={() => handleDateClick(dateNum)}
       >
-        <span className={styles.dateNumOther}>{dateNum}</span>
-        {/* Show all moods as vertical stack */}
+        <span className={isToday ? styles.dateNum : styles.dateNumOther}>{dateNum}</span>
+        {/* Display all moods as a vertical stack below number */}
         {(Array.isArray(dayMoods) && dayMoods.length > 0)
           ? renderMoodStack()
           : (dayJournal
-              ? (
-                  <span className={styles.dotEntry} title="Journal entry">
-                    •
-                  </span>
-                )
-              : null)
+            ? (
+                <span className={styles.dotEntry} title="Journal entry">
+                  •
+                </span>
+              )
+            : null)
         }
-      </div>
+      </button>
     );
   }
 
@@ -471,25 +476,48 @@ function CalendarPage() {
           )}
         </div>
         <div className={styles.moodDisplay} aria-live="polite">
-          {mood && (
-            <div>
-              <span role="img" aria-label={mood.label}>
-                {mood.emoji}
-              </span>
-              <span className={styles.moodLabel}>{mood.label}</span>
-            </div>
-          )}
-          {journal && (
-            <div className={styles.journalEntryDisplay}>
-              <span className={styles.journalIcon} title="Journal entry">
-                📝
-              </span>
-              <span>{journal}</span>
-            </div>
-          )}
+          {/* Show details for selectedDate, or for today if none */}
+          {(() => {
+            let dateToShow, moodToShow, journalToShow;
+            if (selectedDate) {
+              const yearStr = String(selectedDate.year);
+              const monthStr = String(selectedDate.month + 1).padStart(2, "0");
+              const dayStr = String(selectedDate.date).padStart(2, "0");
+              const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+              const md = moodByDate[dateStr] || [];
+              moodToShow = md[md.length - 1] || null;
+              journalToShow = journalByDate[dateStr] || "";
+              dateToShow = dateStr;
+            } else {
+              // fallback: today
+              const todayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(today.date).padStart(2, "0")}`;
+              const md = moodByDate[todayStr] || [];
+              moodToShow = md[md.length - 1] || null;
+              journalToShow = journalByDate[todayStr] || "";
+              dateToShow = todayStr;
+            }
+            return (
+              <>
+                {moodToShow && (
+                  <div>
+                    <span role="img" aria-label={moodToShow.label}>
+                      {moodToShow.emoji}
+                    </span>
+                    <span className={styles.moodLabel}>{moodToShow.label}</span>
+                  </div>
+                )}
+                {journalToShow && (
+                  <div className={styles.journalEntryDisplay}>
+                    <span className={styles.journalIcon} title="Journal entry">📝</span>
+                    <span>{journalToShow}</span>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
-      {modalOpen && (
+      {modalOpen && selectedDate && (
         <div
           className={styles.modalOverlay}
           tabIndex={-1}
@@ -502,11 +530,13 @@ function CalendarPage() {
             className={styles.modal}
             role="dialog"
             aria-modal="true"
-            aria-label="Select mood and enter journal"
+            aria-label={`Mood and journal for ${MONTHS[selectedDate.month]} ${selectedDate.date}, ${selectedDate.year}`}
             tabIndex={0}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className={styles.modalTitle}>How are you feeling today?</h2>
+            <h2 className={styles.modalTitle}>
+              {`How were you feeling on ${MONTHS[selectedDate.month]} ${selectedDate.date}, ${selectedDate.year}?`}
+            </h2>
             <div className={styles.emojiGrid}>
               {MOOD_EMOJIS.map((m) => (
                 <button
@@ -534,7 +564,7 @@ function CalendarPage() {
               placeholder="Write your journal entry (optional)..."
               value={tempJournal}
               onChange={(e) => setTempJournal(e.target.value)}
-              aria-label="Journal entry for today"
+              aria-label={`Journal entry for ${MONTHS[selectedDate.month]} ${selectedDate.date}`}
             />
             <div className={styles.modalActions}>
               <button
