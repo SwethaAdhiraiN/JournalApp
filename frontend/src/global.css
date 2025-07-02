@@ -1,23 +1,34 @@
 :root {
-  /* Extracted exact colors from homepage_color_palette.md and design notes */
-  --primary-bg: #14C8B7;      /* Top Background Teal */
-  --hero-curve-bg: #63D6C4;   /* Mid Gradient Aqua */
-  --bottom-blush-bg: #FFF2EE; /* Lower Background Blush */
-  --headline-text: #175753;   /* Headline, Button Label */
-  --subtext: #319C91;         /* Subtext under heading */
+  /* Shared palette for Homepage and SignUp */
+  --primary-bg: #14C8B7;
+  --hero-curve-bg: #63D6C4;
+  --bottom-blush-bg: #FFF2EE;
+  --headline-text: #175753;
+  --subtext: #319C91;
   --btn-login-bg: #175753;
   --btn-login-text: #FFF2EE;
   --btn-signup-bg: #EBF7EF;
   --btn-signup-text: #175753;
-  --bg-primary: #17b6ab;      /* Design note: top solid */
-  --bg-arc: #4ddcd4;          /* Per design, not directly used */
-  --bg-accent: #faede8;       /* Per design note, used below */
-  --text-main: #184138;       /* All text, headings */
+  --bg-primary: #17b6ab;
+  --bg-arc: #4ddcd4;
+  --bg-accent: #faede8;
+  --text-main: #184138;
   --button-primary-bg: #265248;
   --button-primary-text: #fff;
   --button-secondary-bg: #eafcf5;
   --button-secondary-text: #265248;
   --border-radius: 12px;
+
+  /* SignUp Page palette */
+  --bg-main: #1ac9c6;
+  --bg-curve: #ffe7e2;
+  --form-bg: #c8f7de;
+  --button-bg: #055b5c;
+  --button-text: #ffffff;
+  --text-primary: #095155;
+  --text-input: #095155;
+  --text-footer: #111717;
+  --link: #055b5c;
   --font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 

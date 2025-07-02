@@ -1,9 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './Homepage.module.css';
 
 // PUBLIC_INTERFACE
 function Homepage() {
   /** Homepage for Journal App. Pixel-perfect as per 'assets/homepage_design_notes.md'. */
+  const navigate = useNavigate();
+
+  const handleSignup = () => {
+    // PUBLIC_INTERFACE: Navigate to Sign Up page
+    navigate('/signup');
+  };
+
   return (
     <div className={styles.homeRoot}>
       {/* Decorative Layered Backgrounds */}
@@ -19,7 +27,7 @@ function Homepage() {
           <button className={styles.loginButton} type="button">
             Log In
           </button>
-          <button className={styles.signupButton} type="button">
+          <button className={styles.signupButton} type="button" onClick={handleSignup}>
             Sign Up
           </button>
         </div>
