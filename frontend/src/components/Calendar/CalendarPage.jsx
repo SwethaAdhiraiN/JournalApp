@@ -104,43 +104,48 @@ function CalendarPage() {
   // Fetch all mood and journal entries for user, month
   useEffect(() => {
     /**
-     * On mount: fetch mood and journal data from the backend for the logged-in user.
-     * Populates state to display mood emoji for each calendar date where a mood is present.
+     * On mount: fetch mood and journal data for the logged-in user from the backend.
+     * Populate state so the calendar visually reflects all mood entries (emoji under date).
      */
     async function fetchUserData() {
       const username = localStorage.getItem("journalapp-username");
       if (!username) return;
 
-      // Fetch mood data for logged in user
-      let moods = {};
-      try {
-        // Backend exposes the data file directly for this simplified MVP
-        const res = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/../database/mood.json`, { method: "GET" });
-        if (res.ok) {
-          moods = await res.json();
+      // Helper to fetch a JSON endpoint, with fallback empty object and error logging.
+      async function fetchJson(relativeUrl) {
+        try {
+          const resp = await fetch(
+            `${API_BASE_URL.replace(/\/$/, "")}${relativeUrl}`,
+            { method: "GET" }
+          );
+          if (!resp.ok) return {};
+          return await resp.json();
+        } catch (err) {
+          // We could notify user here if desired (not requested)
+          return {};
         }
-      } catch {
-        moods = {};
       }
 
-      // Fetch journal data for logged in user
-      let journals = {};
-      try {
-        const res2 = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/../database/journal.json`, { method: "GET" });
-        if (res2.ok) {
-          journals = await res2.json();
-        }
-      } catch {
-        journals = {};
-      }
+      // For this MVP backend, mood.json and journal.json are outside Flask static serving,
+      // so we access via a relative path (proxied if needed).
+      // (Paths are relative to backend root, see Flask backend code)
+      // We still use the read-only GET fetch as a way to support live reactivity in MVP.
+      const moodUrl = "/../database/mood.json";
+      const journalUrl = "/../database/journal.json";
 
-      // Only show mood/journal entries for dates that actually appear in this month's calendar
+      // Fetch user mood/journal dicts from backend files.
+      const [allMoods, allJournals] = await Promise.all([
+        fetchJson(moodUrl), fetchJson(journalUrl)
+      ]);
+
+      // Track mood/journal only for visible dates in the current calendar month
       const moodObj = {};
       const journalObj = {};
       const yearStr = String(year);
       const monthStr = String(month + 1).padStart(2, "0");
 
       function getCalendarDates(year, month, weeks) {
+        // Return a list of YYYY-MM-DD strings for every date in the grid (non-null days)
         const days = [];
         for (const week of weeks) {
           for (const d of week) {
@@ -154,20 +159,20 @@ function CalendarPage() {
 
       const calendarDates = getCalendarDates(year, month, calendarWeeks);
 
-      if (moods && moods[username]) {
-        Object.entries(moods[username]).forEach(([date, moodArr]) => {
+      // Only keep mood/journal entries of username for valid dates
+      if (allMoods && allMoods[username]) {
+        Object.entries(allMoods[username]).forEach(([date, moodArr]) => {
           if (calendarDates.includes(date) && Array.isArray(moodArr) && moodArr.length > 0) {
-            const label = moodArr[moodArr.length - 1];
+            const lastMoodLabel = moodArr[moodArr.length - 1];
             moodObj[date] = {
-              label,
-              emoji: MOOD_LABEL_TO_EMOJI[label] || "❓",
+              label: lastMoodLabel,
+              emoji: MOOD_LABEL_TO_EMOJI[lastMoodLabel] || "❓",
             };
           }
         });
       }
-
-      if (journals && journals[username]) {
-        Object.entries(journals[username]).forEach(([date, journalArr]) => {
+      if (allJournals && allJournals[username]) {
+        Object.entries(allJournals[username]).forEach(([date, journalArr]) => {
           if (calendarDates.includes(date) && Array.isArray(journalArr) && journalArr.length > 0) {
             journalObj[date] = journalArr[journalArr.length - 1];
           }
@@ -177,15 +182,14 @@ function CalendarPage() {
       setMoodByDate(moodObj);
       setJournalByDate(journalObj);
 
-      // Set today's data for modal display
+      // Set today's entry for modal display state (if present)
       const todayStr = `${yearStr}-${monthStr}-${String(today.date).padStart(2, "0")}`;
       setMood(moodObj[todayStr] || null);
       setJournal(journalObj[todayStr] || "");
     }
 
     fetchUserData();
-
-    // Rerun on month or year change (single month for this design)
+    // Only rerun if month or year changes
     // eslint-disable-next-line
   }, [year, month]);
 
