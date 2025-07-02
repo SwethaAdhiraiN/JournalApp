@@ -88,11 +88,11 @@ function Login() {
       if (form.username) {
         localStorage.setItem("journalapp-username", form.username);
       }
-      showBanner(data.message || 'Login Successful', 'success', 2300);
+      showBanner(data.message || 'Login Successful', 'success', 900);
       setLoading(false);
 
-      // Optionally redirect after brief time, for now, just show message
-      // setTimeout(() => navigate("/"), 1200);
+      // Redirect to /calendar after short delay
+      setTimeout(() => navigate("/calendar"), 950);
     } catch (err) {
       showBanner('Could not connect to server.', 'error', 3800);
       setLoading(false);

@@ -103,12 +103,11 @@ function SignUp() {
         return;
       }
       setErrors({});
-      if (form.username) {
-        localStorage.setItem("journalapp-username", form.username);
-      }
-      showBanner('Signup successful: User details added to users.json', 'success', 1600);
+      // After signup, clear localStorage (don't login user), redirect to login.
+      localStorage.removeItem("journalapp-username");
+      showBanner('Signup successful: User details added to users.json', 'success', 1100);
       setLoading(false);
-      setTimeout(() => { navigate('/login'); }, 1100);
+      setTimeout(() => { navigate('/login'); }, 900);
     } catch (err) {
       showBanner('Could not connect to server. Please try again.', 'error', 3600);
       setLoading(false);
